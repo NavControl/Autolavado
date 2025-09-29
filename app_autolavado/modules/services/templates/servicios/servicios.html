@@ -1,0 +1,51 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-end mb-2">
+    <a href="/admin/agregar-servicio" class="btn btn-success btn-sm">
+        <i class="fa fa-plus-circle fa-sm me-2"></i>Agregar Servicio
+    </a>
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>No.</th>
+            <th>Nombre del Servicio</th>
+            <th>Descripción</th>
+            <th>Precio</th>
+            <th>Duración Estimada</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for servicio in lista_servicios %}
+        <tr>
+            <td class="text-center">{{ loop.index }}</td>
+            <td>{{ servicio.nombre }}</td>
+            <td>{{ servicio.descripcion }}</td>
+            <td>${{ servicio.precio }}</td>
+            <td>{{ servicio.duracion }} min</td>
+            <td class="text-center">
+                <a href="/admin/editar-servicio/{{ servicio.id }}" class="btn btn-success btn-sm">
+                    <i class="fa fa-edit fa-sm"></i>
+                </a>
+                <button class="btn btn-danger btn-sm" onclick="eliminar_servicio('{{ servicio.id }}')">
+                    <i class="fa fa-trash fa-sm"></i>
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function eliminar_servicio(id) {
+    if(confirm("¿Estás seguro de eliminar este servicio?")) {
+        window.location.href = `/admin/eliminar-servicio/${id}`;
+    }
+}
+</script>
+
+{% endblock %}

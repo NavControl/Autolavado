@@ -1,0 +1,41 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="d-flex">
+    <a href="/admin/usuarios" class="btn btn-outline-danger btn-sm">
+        <i class="fa fa-arrow-left fa-sm me-2"></i>Ver usuarios
+    </a>
+</div>
+<form action="/admin/frm-usuarios" method="POST">
+    <div>
+        <label for="">Usuario</label>
+        <input type="text" class="form-control" placeholder="usuario" name="inpUsuario" required>
+    </div>
+    <div>
+        <label for="">Nombre completo</label>
+        <input type="text" class="form-control" placeholder="usuario" name="inpNombre" required>
+    </div>
+    <div>
+        <label for="">Correo</label>
+        <input type="text" class="form-control" placeholder="usuario" name="inpCorreo" required>
+    </div>
+    <div>
+        <label for="">Teléfono</label>
+        <input type="text" class="form-control" placeholder="usuario" name="inpTelefono" required>
+    </div>
+    <div>
+        <label for="">Rol</label>
+        <select class="form-select" name="slcRol" required>
+            <option value="" selected disabled>Seleccione una opción</option>
+            {% for rol in datos_roles %}
+            <option value="{{rol.id_rol}}">{{rol.nombre}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <button type="submit" class="btn btn-success btn-sm">
+            <i class="fa fa-save fa-sm me-2"></i>Registrar
+        </button>
+    </div>
+</form>
+{% endblock %}

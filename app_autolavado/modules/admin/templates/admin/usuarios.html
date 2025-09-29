@@ -1,0 +1,44 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-end mb-2">
+    <a href="/admin/agregar-usuario" class="btn btn-success btn-sm">
+        <i class="fa fa-plus-circle fa-sm me-2"></i>Agregar
+    </a>
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>No.</th>
+            <th>Usuario</th>
+            <th>Nombre completo</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for datos in datos_usuarios %}
+        <tr>
+            <td class="text-center">{{loop.index}}</td>
+            <td>{{datos.username}}</td>
+            <td>{{datos.nombre_completo}}</td>
+            <td>{{datos.correo}}</td>
+            <td>{{datos.telefono}}</td>
+            <td class="text-center">
+                <a href="/admin/editar-usuario/{{datos.id_usuario}}" class="btn btn-success btn-sm">
+                    <i class="fa fa-edit fa-sm"></i>
+                </a>
+                <button class="btn btn-danger btn-sm" onclick="eliminar_usuario('{{datos.id_usuario}}')">
+                    <i class="fa fa-trash fa-sm"></i>
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+{% endblock %}

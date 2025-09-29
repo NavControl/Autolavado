@@ -1,0 +1,37 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="d-flex mb-2">
+    <a href="/admin/servicios" class="btn btn-outline-danger btn-sm">
+        <i class="fa fa-arrow-left fa-sm me-2"></i>Ver servicios
+    </a>
+</div>
+
+<form action="/admin/frm-servicios" method="POST">
+    <div class="mb-3">
+        <label for="">Nombre del Servicio</label>
+        <input type="text" class="form-control" placeholder="Nombre del servicio" name="inpNombre" required>
+    </div>
+    
+    <div class="mb-3">
+        <label for="">Descripción</label>
+        <textarea class="form-control" placeholder="Descripción del servicio" name="inpDescripcion" rows="3" required></textarea>
+    </div>
+    
+    <div class="mb-3">
+        <label for="">Precio</label>
+        <input type="number" step="0.01" class="form-control" placeholder="Precio en MXN" name="inpPrecio" required>
+    </div>
+    
+    <div class="mb-3">
+        <label for="">Duración Estimada (minutos)</label>
+        <input type="number" class="form-control" placeholder="Duración en minutos" name="inpDuracion" required>
+    </div>
+    
+    <div class="mb-3">
+        <button type="submit" class="btn btn-success btn-sm">
+            <i class="fa fa-save fa-sm me-2"></i>Registrar Servicio
+        </button>
+    </div>
+</form>
+{% endblock %}
