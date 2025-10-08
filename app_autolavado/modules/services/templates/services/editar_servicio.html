@@ -1,56 +1,74 @@
 {% extends 'admin/base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>Editar Servicio</h3>
-        <a href="{{ url_for('services.servicio_inicio') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fa fa-arrow-left fa-sm me-2"></i>Volver a Servicios
-        </a>
-    </div>
+<div class="form-container">
 
-    <form method="POST">
-        <div class="mb-3">
-            <label for="inpNombre" class="form-label">Nombre del Servicio</label>
-            <input type="text" class="form-control" id="inpNombre" name="inpNombre" 
-                   value="{{ servicio.nombre }}" required>
+    <div class="form-card">
+        <div class="form-header">
+            <div class="form-title">
+                <i class="fa fa-edit"></i>
+                Editar servicio
+            </div>
+            <div class="form-subtitle">
+                Modifique los campos que desea actualizar del servicio
+            </div>
         </div>
-        
-        <div class="mb-3">
-            <label for="inpDescripcion" class="form-label">Descripción</label>
-            <textarea class="form-control" id="inpDescripcion" name="inpDescripcion" 
-                      rows="4" required>{{ servicio.descripcion }}</textarea>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="inpPrecio" class="form-label">Precio ($)</label>
-                    <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        <input type="number" step="0.01" class="form-control" id="inpPrecio" 
-                               name="inpPrecio" value="{{ servicio.precio }}" required>
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="inpNombre">Nombre del Servicio</label>
+                <input type="text" class="form-control" id="inpNombre" name="inpNombre" 
+                       value="{{ servicio.nombre }}" placeholder="Ingrese el nombre del servicio" required>
+                <div class="invalid-feedback">
+                    Por favor ingrese un nombre válido para el servicio.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="inpDescripcion">Descripción</label>
+                <textarea class="form-control" id="inpDescripcion" name="inpDescripcion" 
+                          rows="4" placeholder="Describa el servicio detalladamente" required>{{ servicio.descripcion }}</textarea>
+                <div class="invalid-feedback">
+                    Por favor ingrese una descripción para el servicio.
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inpPrecio">Precio (MXN)</label>
+                        <div class="input-with-icon input-price">
+                            <input type="number" step="0.01" class="form-control" id="inpPrecio" 
+                                   name="inpPrecio" value="{{ servicio.precio }}" placeholder="0.00" required>
+                        </div>
+                        <div class="invalid-feedback">
+                            Por favor ingrese un precio válido.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inpDuracion">Duración Estimada (minutos)</label>
+                        <div class="input-with-icon input-duration">
+                            <input type="number" class="form-control" id="inpDuracion" 
+                                   name="inpDuracion" value="{{ servicio.duracion }}" placeholder="60" required>
+                        </div>
+                        <div class="invalid-feedback">
+                            Por favor ingrese una duración válida en minutos.
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="inpDuracion" class="form-label">Duración Estimada (minutos)</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" id="inpDuracion" 
-                               name="inpDuracion" value="{{ servicio.duracion }}" required>
-                        <span class="input-group-text">min</span>
-                    </div>
-                </div>
+            
+            <div class="btn-form-group">
+                <a href="{{ url_for('services.servicio_inicio') }}" class="btn btn-outline-danger">
+                    <i class="fa fa-times fa-sm me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn-submit">
+                    <i class="fa fa-save fa-sm me-2"></i>Actualizar Servicio
+                </button>
             </div>
-        </div>
-        
-        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-            <a href="{{ url_for('services.servicio_inicio') }}" class="btn btn-secondary me-md-2">Cancelar</a>
-            <button type="submit" class="btn btn-primary">
-                <i class="fa fa-save fa-sm me-2"></i>Actualizar Servicio
-            </button>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 {% endblock %}
