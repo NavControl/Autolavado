@@ -2,12 +2,12 @@
 
 {% block content %}
 <div class="d-flex mb-2">
-    <a href="/admin/servicios" class="btn btn-outline-danger btn-sm">
-        <i class="fa fa-arrow-left fa-sm me-2"></i>Ver servicios
+    <a href="{{ url_for('services.servicio_inicio') }}" class="btn btn-outline-danger btn-sm">
+    <i class="fa fa-arrow-left fa-sm me-2"></i>Ver servicios
     </a>
 </div>
 
-<form action="/admin/frm-servicios" method="POST">
+<form action="{{ url_for('services.agregar_servicio') }}" method="POST">
     <div class="mb-3">
         <label for="">Nombre del Servicio</label>
         <input type="text" class="form-control" placeholder="Nombre del servicio" name="inpNombre" required>
