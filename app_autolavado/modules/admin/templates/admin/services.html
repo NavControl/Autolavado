@@ -1,0 +1,125 @@
+  {% extends 'admin/base.html' %}
+
+  {% block content %}
+    <div class="container mt-5">
+      <h2>Gestión de Servicios</h2>
+      
+      <!-- Botón para agregar un nuevo servicio -->
+      <a href="#" class="btn btn-success mb-3">+ Agregar Servicio</a>
+
+      <!-- Tabla de servicios -->
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Precio</th>
+            <th>Duración</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lavado Básico</td>
+            <td>Lavado exterior y limpieza de llantas.</td>
+            <td>$150</td>
+            <td>30 min</td>
+            <td>
+              <a href="#" class="btn btn-primary">Editar</a>
+              <a href="#" class="btn btn-danger">Eliminar</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Lavado Premium</td>
+            <td>Lavado exterior e interior, pulido y encerado.</td>
+            <td>$250</td>
+            <td>1 hora</td>
+            <td>
+              <a href="#" class="btn btn-primary">Editar</a>
+              <a href="#" class="btn btn-danger">Eliminar</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Paquete Completo</td>
+            <td>Lavado básico + aspirado + limpieza de tapicería.</td>
+            <td>$350</td>
+            <td>1.5 horas</td>
+            <td>
+              <a href="#" class="btn btn-primary">Editar</a>
+              <a href="#" class="btn btn-danger">Eliminar</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Opciones de precios y creación de paquetes -->
+      <h3>Gestión de Precios y Paquetes</h3>
+      <p>Aquí puedes asignar o modificar precios para los servicios, así como crear paquetes con descuentos especiales.</p>
+
+      <!-- Botón para crear paquete -->
+      <a href="#" class="btn btn-warning mb-3">+ Crear Paquete</a>
+
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Paquete</th>
+            <th>Servicios Incluidos</th>
+            <th>Precio</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Paquete Lavado Completo</td>
+            <td>Lavado + Aspirado + Encerado</td>
+            <td>$400</td>
+            <td>
+              <a href="#" class="btn btn-primary">Editar</a>
+              <a href="#" class="btn btn-danger">Eliminar</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Paquete Premium</td>
+            <td>Lavado Premium + Limpieza de tapicería</td>
+            <td>$500</td>
+            <td>
+              <a href="#" class="btn btn-primary">Editar</a>
+              <a href="#" class="btn btn-danger">Eliminar</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Opciones adicionales -->
+      <h3>Opciones Adicionales</h3>
+      <p>Añade opciones extras como limpieza de tapicería, desodorización, etc.</p>
+
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Opción</th>
+            <th>Precio</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Limpieza de tapicería</td>
+            <td>$100</td>
+            <td>
+              <a href="#" class="btn btn-primary">Editar</a>
+              <a href="#" class="btn btn-danger">Eliminar</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Desodorización</td>
+            <td>$50</td>
+            <td>
+              <a href="#" class="btn btn-primary">Editar</a>
+              <a href="#" class="btn btn-danger">Eliminar</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  {% endblock %}
