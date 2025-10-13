@@ -1,7 +1,7 @@
 import bcrypt
 
 # Contraseña que deseas hashear
-password = "1313".encode('utf-8')  # Convertir a bytes
+password = "1234".encode('utf-8')  # Convertir a bytes
 
 # Generar hash
 hashed_password = bcrypt.hashpw(password, bcrypt.gensalt())
