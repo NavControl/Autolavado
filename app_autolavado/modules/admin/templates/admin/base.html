@@ -101,7 +101,7 @@
           <span class="nav-txt">Usuarios</span>
         </a>
 
-        <!-- 🔹 NUEVO MÓDULO PAGOS -->
+        <!-- 🔹 MÓDULO PAGOS -->
         <a class="nav-link {% if '/pagos' in request.path %}active{% endif %}"
           href="{{ url_for('pagos_bp.lista_pagos') }}">
           <span class="nav-ico">
@@ -114,6 +114,16 @@
           <span class="nav-txt">Pagos</span>
         </a>
         <!-- 🔹 FIN MÓDULO PAGOS -->
+
+        <!-- 🔸 NUEVO MÓDULO PROMOCIONES -->
+        <a class="nav-link {% if '/promociones' in request.path %}active{% endif %}"
+          href="{{ url_for('promociones_bp.lista_codigos') }}">
+          <span class="nav-ico">
+            <i class="fa-solid fa-tags"></i>
+          </span>
+          <span class="nav-txt">Promociones</span>
+        </a>
+        <!-- 🔸 FIN MÓDULO PROMOCIONES -->
 
         <div class="nav-sep" aria-hidden="true"></div>
 
