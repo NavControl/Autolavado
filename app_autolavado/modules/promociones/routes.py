@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from config.db_connection import get_db_connection
 from . import promociones_bp
 import traceback
@@ -33,20 +33,29 @@ def lista_codigos():
 def registrar_codigo():
     if request.method == 'POST':
         try:
-            codigo = request.form['codigo']
+            codigo = request.form['codigo'].strip().upper()
             tipo = request.form['tipo']
-            valor = request.form['valor']
+            valor = float(request.form['valor'])
             fecha_inicio = request.form['fecha_inicio']
             fecha_fin = request.form['fecha_fin']
+            usos_maximos = request.form.get('usos_maximos', 0)
             estado = 'activo'
 
             conn = get_db_connection()
-            cur = conn.cursor()
+            cur = conn.cursor(dictionary=True)
+
+            # Validar duplicado
+            cur.execute("SELECT * FROM codigos_descuento WHERE codigo = %s", (codigo,))
+            if cur.fetchone():
+                flash(f"⚠️ El código '{codigo}' ya existe.", "warning")
+                return redirect(url_for('promociones_bp.registrar_codigo'))
+
+            # Insertar nuevo código
             cur.execute("""
                 INSERT INTO codigos_descuento 
-                (codigo, tipo, valor, fecha_inicio, fecha_fin, estado)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (codigo, tipo, valor, fecha_inicio, fecha_fin, estado))
+                (codigo, tipo, valor, fecha_inicio, fecha_fin, usos_maximos, usos_actuales, estado)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (codigo, tipo, valor, fecha_inicio, fecha_fin, usos_maximos, 0, estado))
             conn.commit()
 
             flash(f"Código '{codigo}' registrado correctamente ✅", "success")
@@ -74,23 +83,24 @@ def editar_codigo(id_codigo):
         cur = conn.cursor(dictionary=True)
 
         if request.method == 'POST':
-            codigo = request.form['codigo']
+            codigo = request.form['codigo'].strip().upper()
             tipo = request.form['tipo']
-            valor = request.form['valor']
+            valor = float(request.form['valor'])
             fecha_inicio = request.form['fecha_inicio']
             fecha_fin = request.form['fecha_fin']
+            usos_maximos = request.form.get('usos_maximos', 0)
             estado = request.form['estado']
 
             cur.execute("""
                 UPDATE codigos_descuento
-                SET codigo=%s, tipo=%s, valor=%s, fecha_inicio=%s, fecha_fin=%s, estado=%s
+                SET codigo=%s, tipo=%s, valor=%s, fecha_inicio=%s, fecha_fin=%s, usos_maximos=%s, estado=%s
                 WHERE id_codigo=%s
-            """, (codigo, tipo, valor, fecha_inicio, fecha_fin, estado, id_codigo))
+            """, (codigo, tipo, valor, fecha_inicio, fecha_fin, usos_maximos, estado, id_codigo))
             conn.commit()
             flash(f"Código '{codigo}' actualizado correctamente ✅", "success")
             return redirect(url_for('promociones_bp.lista_codigos'))
 
-        # Si es solo una vista GET
+        # Cargar código para edición
         cur.execute("SELECT * FROM codigos_descuento WHERE id_codigo=%s", (id_codigo,))
         codigo = cur.fetchone()
 
@@ -113,7 +123,7 @@ def editar_codigo(id_codigo):
 # ------------------------------------------------------------
 # 🗑️ ELIMINAR CÓDIGO
 # ------------------------------------------------------------
-@promociones_bp.route('/eliminar/<int:id_codigo>')
+@promociones_bp.route('/eliminar/<int:id_codigo>', methods=['POST', 'GET'])
 def eliminar_codigo(id_codigo):
     try:
         conn = get_db_connection()

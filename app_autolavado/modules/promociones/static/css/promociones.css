@@ -6,26 +6,46 @@ body {
   font-family: "Segoe UI", Arial, sans-serif;
 }
 
-/* Tarjetas y tablas */
-.card-header {
+/* ============================
+   🧾 Tarjetas de Promociones
+   ============================ */
+
+.promo-card {
+  border-radius: 12px;
+  transition: all 0.25s ease-in-out;
+  border: 1px solid #e0e0e0;
+}
+
+.promo-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.promo-card .card-header {
   font-weight: bold;
   letter-spacing: 0.5px;
+  font-size: 1.1rem;
+  border-top-left-radius: 12px !important;
+  border-top-right-radius: 12px !important;
 }
 
-.table thead th {
-  background-color: #007bff;
-  color: #fff;
+.promo-card .card-body p {
+  margin-bottom: 0.4rem;
+  color: #333;
+  font-size: 0.95rem;
 }
 
-.btn-success, .btn-primary {
-  transition: 0.3s ease all;
+.promo-card .card-footer {
+  border-top: none;
+  background-color: #f9f9f9;
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
 }
 
-.btn-success:hover, .btn-primary:hover {
-  transform: scale(1.03);
-}
+/* ============================
+   🟢 Colores de Estado
+   ============================ */
 
-/* Etiquetas de estado */
 .badge.bg-success {
   background-color: #28a745 !important;
 }
@@ -34,22 +54,45 @@ body {
   background-color: #6c757d !important;
 }
 
-/* Espaciado extra para contenedores */
+/* ============================
+   🧩 Botones
+   ============================ */
+
+.btn-success, .btn-primary, .btn-danger {
+  transition: all 0.3s ease-in-out;
+  font-weight: 500;
+}
+
+.btn-success:hover, .btn-primary:hover, .btn-danger:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================
+   ⚙️ Estructura general
+   ============================ */
+
 .container {
   margin-bottom: 3rem;
 }
 
-.card {
-  border-radius: 10px;
-}
-
 h4 i {
   font-size: 1.2rem;
 }
 
-h4 i {
-  font-size: 1.2rem;
-}
 .alert {
   font-size: 0.9rem;
+}
+
+/* ============================
+   💡 Responsividad
+   ============================ */
+
+@media (max-width: 768px) {
+  .promo-card .card-body p {
+    font-size: 0.9rem;
+  }
+  .promo-card .card-header {
+    font-size: 1rem;
+  }
 }

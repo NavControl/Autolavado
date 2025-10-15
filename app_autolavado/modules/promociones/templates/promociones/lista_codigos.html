@@ -10,6 +10,7 @@
     </a>
   </div>
 
+  <!-- Mensajes flash -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
@@ -22,60 +23,70 @@
   {% endwith %}
 
   {% if codigos %}
-  <div class="table-responsive shadow-sm">
-    <table class="table table-striped align-middle">
-      <thead class="table-primary">
-        <tr>
-          <th>ID</th>
-          <th>Código</th>
-          <th>Tipo</th>
-          <th>Valor</th>
-          <th>Inicio</th>
-          <th>Fin</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for c in codigos %}
-        <tr>
-          <td>{{ c.id_codigo }}</td>
-          <td><strong>{{ c.codigo }}</strong></td>
-          <td>{{ c.tipo|capitalize }}</td>
-          <td>
+  <!-- Tarjetas de promociones -->
+  <div class="row g-4">
+    {% for c in codigos %}
+    <div class="col-xl-3 col-md-4 col-sm-6">
+      <div class="card shadow-sm border-0 promo-card h-100">
+        <!-- Encabezado con estado -->
+        <div class="card-header text-center text-white 
+          {% if c.estado == 'activo' %} bg-success {% else %} bg-secondary {% endif %}">
+          <h5 class="mb-0 fw-bold">{{ c.codigo }}</h5>
+        </div>
+
+        <!-- Cuerpo de la tarjeta -->
+        <div class="card-body">
+          <p class="mb-1"><strong>Tipo:</strong> {{ c.tipo|capitalize }}</p>
+          <p class="mb-1"><strong>Valor:</strong>
             {% if c.tipo == 'porcentaje' %}
               {{ c.valor }}%
             {% else %}
               ${{ c.valor }}
             {% endif %}
-          </td>
-          <td>{{ c.fecha_inicio }}</td>
-          <td>{{ c.fecha_fin }}</td>
-          <td>
-            {% if c.estado == 'activo' %}
-              <span class="badge bg-success">Activo</span>
-            {% else %}
-              <span class="badge bg-secondary">Inactivo</span>
-            {% endif %}
-          </td>
-          <td>
-            <a href="{{ url_for('promociones_bp.editar_codigo', id_codigo=c.id_codigo) }}" class="btn btn-sm btn-primary">
-              <i class="fa fa-edit"></i>
-            </a>
-            <a href="{{ url_for('promociones_bp.eliminar_codigo', id_codigo=c.id_codigo) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro que deseas eliminar este código?');">
-              <i class="fa fa-trash"></i>
-            </a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </p>
+          <hr>
+          <p class="mb-1"><strong>Inicio:</strong> {{ c.fecha_inicio }}</p>
+          <p class="mb-1"><strong>Fin:</strong> {{ c.fecha_fin }}</p>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center">
+            <span><strong>Usos:</strong></span>
+            <span class="fw-bold text-primary">
+              {{ c.usos_actuales or 0 }}/{{ c.usos_maximos or 0 }}
+            </span>
+          </div>
+          <div class="progress mt-1" style="height: 6px;">
+            {% set progreso = ((c.usos_actuales or 0) / (c.usos_maximos or 1)) * 100 %}
+            <div class="progress-bar {% if progreso >= 100 %} bg-danger {% else %} bg-primary {% endif %}" 
+                 role="progressbar" 
+                 style="width: {{ progreso }}%;" 
+                 aria-valuenow="{{ progreso }}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+
+        <!-- Pie con acciones -->
+        <div class="card-footer text-end bg-light border-top-0">
+          <a href="{{ url_for('promociones_bp.editar_codigo', id_codigo=c.id_codigo) }}" 
+             class="btn btn-sm btn-primary me-2" title="Editar">
+            <i class="fa fa-edit"></i>
+          </a>
+          <a href="{{ url_for('promociones_bp.eliminar_codigo', id_codigo=c.id_codigo) }}" 
+             class="btn btn-sm btn-danger" title="Eliminar"
+             onclick="return confirm('¿Seguro que deseas eliminar este código?');">
+            <i class="fa fa-trash"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
   </div>
+
   {% else %}
   <div class="alert alert-info text-center mt-4">
     <i class="fa fa-info-circle"></i> No hay códigos registrados aún.
   </div>
   {% endif %}
 </div>
+
+<link rel="stylesheet" href="{{ url_for('promociones_bp.static', filename='css/promociones.css') }}">
 
 {% endblock %}
