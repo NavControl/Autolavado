@@ -1,0 +1,55 @@
+/* ============================
+   🎨 Estilos del módulo Promociones
+   ============================ */
+
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Tarjetas y tablas */
+.card-header {
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.table thead th {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.btn-success, .btn-primary {
+  transition: 0.3s ease all;
+}
+
+.btn-success:hover, .btn-primary:hover {
+  transform: scale(1.03);
+}
+
+/* Etiquetas de estado */
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+/* Espaciado extra para contenedores */
+.container {
+  margin-bottom: 3rem;
+}
+
+.card {
+  border-radius: 10px;
+}
+
+h4 i {
+  font-size: 1.2rem;
+}
+
+h4 i {
+  font-size: 1.2rem;
+}
+.alert {
+  font-size: 0.9rem;
+}

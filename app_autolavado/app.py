@@ -12,7 +12,8 @@ from modules.admin import admin_bp
 from modules.client import cliente_bp
 from modules.services import servicio_bp
 from modules.auth import auth_bp
-from modules.pagos import pagos_bp  # 👈 Agregado
+from modules.pagos import pagos_bp           # ✅ Módulo de pagos
+from modules.promociones import promociones_bp   # ✅ Nuevo módulo de promociones
 
 # --- Función fábrica de la aplicación ---
 def create_app():
@@ -26,7 +27,8 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')           # Panel de administrador
     app.register_blueprint(cliente_bp, url_prefix='/client')        # Módulo cliente
     app.register_blueprint(servicio_bp, url_prefix='/services')     # Servicios
-    app.register_blueprint(pagos_bp, url_prefix='/admin/pagos')     # 👈 Módulo pagos
+    app.register_blueprint(pagos_bp, url_prefix='/admin/pagos')     # Módulo pagos
+    app.register_blueprint(promociones_bp, url_prefix='/admin/promociones')  # 🟢 Nuevo módulo promociones
 
     # --- Ruta principal ---
     @app.route('/')
