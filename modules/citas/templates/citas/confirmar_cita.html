@@ -1,0 +1,238 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fa fa-check-circle me-2"></i>Confirmar Cita
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Steps -->
+                    <div class="steps mb-5">
+                        <div class="step completed">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Inicio</div>
+                        </div>
+                        <div class="step completed">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Servicios</div>
+                        </div>
+                        <div class="step completed">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Fecha y Hora</div>
+                        </div>
+                        <div class="step completed">
+                            <div class="step-number">4</div>
+                            <div class="step-label">Vehículo</div>
+                        </div>
+                        <div class="step active">
+                            <div class="step-number">5</div>
+                            <div class="step-label">Confirmar</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Resumen de la Cita</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Fecha:</strong> <span id="confirmar-fecha"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Hora:</strong> <span id="confirmar-hora"></span>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <strong>Vehículo:</strong> 
+                                            <span id="confirmar-vehiculo"></span>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <strong>Servicios seleccionados:</strong>
+                                            <ul id="confirmar-servicios" class="mt-2">
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Total a Pagar</h6>
+                                    <div class="text-center py-3">
+                                        <h3>$<span id="confirmar-total">0</span></h3>
+                                        <p class="text-muted">Duración estimada: <span id="confirmar-duracion">0</span> minutos</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="/citas/informacion-vehiculo" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left me-2"></i>Anterior
+                        </a>
+                        <button id="btn-confirmar" class="btn btn-success btn-lg">
+                            <i class="fa fa-calendar-check me-2"></i>Confirmar Cita
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnConfirmar = document.getElementById('btn-confirmar');
+
+    // Cargar datos de la cita
+    async function cargarDatosCita() {
+        try {
+            const response = await fetch('/citas/api/datos-cita');
+            const data = await response.json();
+            if (data.servicios && data.fecha && data.hora && data.vehiculo) {
+                mostrarDatosCita(data);
+            }
+        } catch (error) {
+            console.error('Error al cargar datos de la cita:', error);
+        }
+    }
+
+    function mostrarDatosCita(data) {
+        // Mostrar fecha y hora
+        document.getElementById('confirmar-fecha').textContent = data.fecha;
+        document.getElementById('confirmar-hora').textContent = data.hora;
+
+        // Mostrar vehículo
+        const vehiculo = data.vehiculo;
+        document.getElementById('confirmar-vehiculo').textContent = 
+            `${vehiculo.marca} ${vehiculo.modelo} - ${vehiculo.placas} (${vehiculo.color})`;
+
+        // Mostrar servicios
+        const serviciosList = document.getElementById('confirmar-servicios');
+        let total = 0;
+        let duracionTotal = 0;
+
+        serviciosList.innerHTML = '';
+        data.servicios.forEach(servicio => {
+            const li = document.createElement('li');
+            li.className = 'd-flex justify-content-between';
+            li.innerHTML = `
+                <span>${servicio.nombre}</span>
+                <span>$${servicio.precio}</span>
+            `;
+            serviciosList.appendChild(li);
+            total += parseFloat(servicio.precio);
+            duracionTotal += parseInt(servicio.duracion);
+        });
+
+        // Mostrar total y duración
+        document.getElementById('confirmar-total').textContent = total.toFixed(2);
+        document.getElementById('confirmar-duracion').textContent = duracionTotal;
+    }
+
+    // Confirmar cita
+    btnConfirmar.addEventListener('click', async function() {
+        if (!confirm('¿Estás seguro de confirmar esta cita?')) {
+            return;
+        }
+
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Procesando...';
+
+        try {
+            const response = await fetch('/citas/procesar-cita', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.message === "OK") {
+                window.location.href = `/citas/confirmacion/${data.id_cita}`;
+            } else {
+                alert('Error al confirmar la cita: ' + data.error);
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = '<i class="fa fa-calendar-check me-2"></i>Confirmar Cita';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al confirmar la cita');
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = '<i class="fa fa-calendar-check me-2"></i>Confirmar Cita';
+        }
+    });
+
+    // Cargar datos al inicio
+    cargarDatosCita();
+});
+</script>
+
+<style>
+.steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+.steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: 1;
+}
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 8px;
+    border: 3px solid white;
+}
+.step.completed .step-number {
+    background-color: #28a745;
+    color: white;
+}
+.step.active .step-number {
+    background-color: #007bff;
+    color: white;
+}
+.step-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+.step.active .step-label {
+    color: #007bff;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

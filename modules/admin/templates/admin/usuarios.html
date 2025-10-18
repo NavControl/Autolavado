@@ -1,0 +1,73 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="table-container">
+    <div class="table-header">
+        <div class="table-title">
+            <h2><i class="fa fa-users me-2"></i>Gestión de Usuarios</h2>
+            <span class="table-count">{{ datos_usuarios|length }} usuarios</span>
+        </div>
+        <div class="table-actions">
+            <div class="table-search">
+                <input type="text" placeholder="Buscar usuarios...">
+            </div>
+            <a href="/admin/agregar-usuario" class="btn-modern btn-modern-success">
+                <i class="fa fa-plus-circle fa-sm me-2"></i>Agregar Usuario
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th class="col-number">No.</th>
+                    <th>Usuario</th>
+                    <th>Nombre completo</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th class="col-actions">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for datos in datos_usuarios %}
+                <tr>
+                    <td class="col-number">{{ loop.index }}</td>
+                    <td>
+                        <span class="user-name">{{ datos.username }}</span>
+                    </td>
+                    <td>{{ datos.nombre_completo }}</td>
+                    <td>{{ datos.correo }}</td>
+                    <td>{{ datos.telefono }}</td>
+                    <td class="col-actions">
+                        <div class="action-buttons">
+                            <a href="/admin/editar-usuario/{{ datos.id_usuario }}" class="btn-action btn-action-edit" title="Editar usuario">
+                                <i class="fa fa-edit fa-sm"></i>
+                            </a>
+                            <button class="btn-action btn-action-delete" onclick="eliminar_usuario('{{ datos.id_usuario }}')" title="Eliminar usuario">
+                                <i class="fa fa-trash fa-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fa fa-users"></i>
+                            </div>
+                            <h4>No hay usuarios registrados</h4>
+                            <p>Comienza agregando el primer usuario al sistema.</p>
+                            <a href="/admin/agregar-usuario" class="btn-modern btn-modern-success">
+                                <i class="fa fa-plus-circle fa-sm me-2"></i>Agregar Primer Usuario
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}  

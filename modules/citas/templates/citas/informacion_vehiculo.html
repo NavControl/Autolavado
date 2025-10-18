@@ -1,0 +1,239 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fa fa-car me-2"></i>Información del Vehículo
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Steps -->
+                    <div class="steps mb-5">
+                        <div class="step completed">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Inicio</div>
+                        </div>
+                        <div class="step completed">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Servicios</div>
+                        </div>
+                        <div class="step completed">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Fecha y Hora</div>
+                        </div>
+                        <div class="step active">
+                            <div class="step-number">4</div>
+                            <div class="step-label">Vehículo</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">5</div>
+                            <div class="step-label">Confirmar</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <form id="form-vehiculo">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="marca" class="form-label">Marca</label>
+                                        <input type="text" class="form-control" id="marca" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="modelo" class="form-label">Modelo</label>
+                                        <input type="text" class="form-control" id="modelo" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="placas" class="form-label">Placas</label>
+                                        <input type="text" class="form-control" id="placas" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="color" class="form-label">Color</label>
+                                        <input type="text" class="form-control" id="color">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="anio" class="form-label">Año</label>
+                                        <input type="number" class="form-control" id="anio" min="1990" max="2025">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Resumen de Cita</h6>
+                                    <div id="resumen-servicios">
+                                        <!-- Se llenará con JavaScript -->
+                                    </div>
+                                    <div class="mt-3">
+                                        <strong>Fecha: </strong><span id="resumen-fecha"></span><br>
+                                        <strong>Hora: </strong><span id="resumen-hora"></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-3">
+                                        <strong>Total: $<span id="total-precio">0</span></strong>
+                                        <strong>Duración: <span id="total-duracion">0</span> min</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="/citas/seleccionar-fecha" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left me-2"></i>Anterior
+                        </a>
+                        <button type="submit" form="form-vehiculo" class="btn btn-primary">
+                            Continuar <i class="fa fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-vehiculo');
+
+    // Cargar resumen de la cita
+    async function cargarResumen() {
+        try {
+            const response = await fetch('/citas/api/datos-cita');
+            const data = await response.json();
+            if (data.servicios) {
+                mostrarResumen(data.servicios, data.fecha, data.hora);
+            }
+        } catch (error) {
+            console.error('Error al cargar resumen:', error);
+        }
+    }
+
+    function mostrarResumen(servicios, fecha, hora) {
+        const resumenDiv = document.getElementById('resumen-servicios');
+        const totalPrecio = document.getElementById('total-precio');
+        const totalDuracion = document.getElementById('total-duracion');
+        const resumenFecha = document.getElementById('resumen-fecha');
+        const resumenHora = document.getElementById('resumen-hora');
+
+        let html = '';
+        let total = 0;
+        let duracionTotal = 0;
+
+        servicios.forEach(servicio => {
+            html += `<div class="d-flex justify-content-between small">
+                <span>${servicio.nombre}</span>
+                <span>$${servicio.precio}</span>
+            </div>`;
+            total += parseFloat(servicio.precio);
+            duracionTotal += parseInt(servicio.duracion);
+        });
+
+        resumenDiv.innerHTML = html;
+        totalPrecio.textContent = total.toFixed(2);
+        totalDuracion.textContent = duracionTotal;
+        resumenFecha.textContent = fecha;
+        resumenHora.textContent = hora;
+    }
+
+    // Enviar formulario
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const vehiculoInfo = {
+            marca: document.getElementById('marca').value,
+            modelo: document.getElementById('modelo').value,
+            placas: document.getElementById('placas').value,
+            color: document.getElementById('color').value,
+            anio: document.getElementById('anio').value
+        };
+
+        try {
+            const response = await fetch('/citas/guardar-vehiculo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(vehiculoInfo)
+            });
+
+            const data = await response.json();
+            
+            if (data.message === "OK") {
+                window.location.href = '/citas/confirmar-cita';
+            } else {
+                alert('Error al guardar la información del vehículo: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al guardar la información del vehículo');
+        }
+    });
+
+    // Cargar resumen al inicio
+    cargarResumen();
+});
+</script>
+
+<style>
+.steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+.steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: 1;
+}
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 8px;
+    border: 3px solid white;
+}
+.step.completed .step-number {
+    background-color: #28a745;
+    color: white;
+}
+.step.active .step-number {
+    background-color: #007bff;
+    color: white;
+}
+.step-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+.step.active .step-label {
+    color: #007bff;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <div class="form-title">
+                <i class="fa fa-plus-circle"></i>
+                Registrar nuevo servicio
+            </div>
+            <div class="form-subtitle">
+                Complete todos los campos para agregar un nuevo servicio al sistema
+            </div>
+        </div>
+
+        <form action="{{ url_for('services.agregar_servicio') }}" method="POST">
+            <div class="form-group">
+                <label for="inpNombre">Nombre del Servicio</label>
+                <input type="text" class="form-control" id="inpNombre" placeholder="Ingrese el nombre del servicio" name="inpNombre" required>
+                <div class="invalid-feedback">
+                    Por favor ingrese un nombre válido para el servicio.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="inpDescripcion">Descripción</label>
+                <textarea class="form-control" id="inpDescripcion" placeholder="Describa el servicio detalladamente" name="inpDescripcion" rows="4" required></textarea>
+                <div class="invalid-feedback">
+                    Por favor ingrese una descripción para el servicio.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="inpPrecio">Precio (MXN)</label>
+                <div class="input-with-icon input-price">
+                    <input type="number" step="0.01" class="form-control" id="inpPrecio" placeholder="0.00" name="inpPrecio" required>
+                </div>
+                <div class="invalid-feedback">
+                    Por favor ingrese un precio válido.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="inpDuracion">Duración Estimada (minutos)</label>
+                <div class="input-with-icon input-duration">
+                    <input type="number" class="form-control" id="inpDuracion" placeholder="60" name="inpDuracion" required>
+                </div>
+                <div class="invalid-feedback">
+                    Por favor ingrese una duración válida en minutos.
+                </div>
+            </div>
+            
+            <div class="btn-form-group">
+                <a href="{{ url_for('services.servicio_inicio') }}" class="btn btn-outline-danger">
+                    <i class="fa fa-times fa-sm me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn-submit">
+                    <i class="fa fa-save fa-sm me-2"></i>Registrar Servicio
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

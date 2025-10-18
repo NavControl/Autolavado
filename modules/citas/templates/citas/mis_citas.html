@@ -1,0 +1,244 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fa fa-calendar me-2"></i>Mis Citas
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if citas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Vehículo</th>
+                                    <th>Servicios</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cita in citas %}
+                                <tr>
+                                    <td>{{ cita.fecha }}</td>
+                                    <td>{{ cita.hora }}</td>
+                                    <td>
+                                        {{ cita.marca }} {{ cita.modelo }}<br>
+                                        <small class="text-muted">{{ cita.placas }}</small>
+                                    </td>
+                                    <td>
+                                        <!-- Aquí podrías mostrar los servicios -->
+                                        <small>Ver detalles</small>
+                                    </td>
+                                    <td>${{ cita.total }}</td>
+                                    <td>
+                                        <span class="badge estado-badge estado-{{ cita.estado }}">
+                                            {{ cita.estado|replace('_', ' ')|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if cita.estado in ['pendiente', 'confirmada'] %}
+                                            <button class="btn btn-outline-warning" 
+                                                    onclick="solicitarModificacion({{ cita.id_cita }})"
+                                                    data-bs-toggle="tooltip" title="Modificar">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" 
+                                                    onclick="cancelarCita({{ cita.id_cita }})"
+                                                    data-bs-toggle="tooltip" title="Cancelar">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-info" 
+                                                    onclick="verDetalle({{ cita.id_cita }})"
+                                                    data-bs-toggle="tooltip" title="Ver detalle">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fa fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No tienes citas agendadas</h4>
+                        <p class="text-muted">Agenda tu primera cita para lavar tu vehículo.</p>
+                        <a href="/citas/nueva-cita" class="btn btn-primary">
+                            <i class="fa fa-plus me-2"></i>Agendar Cita
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para modificación -->
+<div class="modal fade" id="modalModificacion" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Solicitar Modificación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formModificacion">
+                    <input type="hidden" id="citaIdModificar">
+                    <div class="mb-3">
+                        <label for="nuevaFecha" class="form-label">Nueva Fecha</label>
+                        <input type="date" class="form-control" id="nuevaFecha" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nuevaHora" class="form-label">Nueva Hora</label>
+                        <select class="form-control" id="nuevaHora" required>
+                            <!-- Se llenará con JavaScript -->
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarModificacion()">Solicitar Modificación</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function cancelarCita(idCita) {
+    if (!confirm('¿Estás seguro de que quieres cancelar esta cita?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/citas/cancelar-cita/${idCita}`, {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+        
+        if (data.message === "Cita cancelada correctamente") {
+            alert('Cita cancelada correctamente');
+            location.reload();
+        } else {
+            alert('Error al cancelar la cita: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al cancelar la cita');
+    }
+}
+
+function solicitarModificacion(idCita) {
+    document.getElementById('citaIdModificar').value = idCita;
+    
+    // Establecer fecha mínima como hoy
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('nuevaFecha').setAttribute('min', today);
+    
+    // Limpiar y preparar el modal
+    document.getElementById('nuevaFecha').value = '';
+    document.getElementById('nuevaHora').innerHTML = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalModificacion'));
+    modal.show();
+}
+
+// Cargar horarios cuando se selecciona fecha
+document.getElementById('nuevaFecha').addEventListener('change', async function() {
+    const fecha = this.value;
+    const horaSelect = document.getElementById('nuevaHora');
+    
+    if (!fecha) {
+        horaSelect.innerHTML = '';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/citas/api/horarios-disponibles?fecha=${fecha}`);
+        const data = await response.json();
+
+        if (data.disponible) {
+            horaSelect.innerHTML = '';
+            data.slots.forEach(slot => {
+                const option = document.createElement('option');
+                option.value = slot;
+                option.textContent = slot;
+                horaSelect.appendChild(option);
+            });
+        } else {
+            horaSelect.innerHTML = '<option value="">No hay horarios disponibles</option>';
+        }
+    } catch (error) {
+        console.error('Error al cargar horarios:', error);
+        horaSelect.innerHTML = '<option value="">Error al cargar horarios</option>';
+    }
+});
+
+async function confirmarModificacion() {
+    const idCita = document.getElementById('citaIdModificar').value;
+    const nuevaFecha = document.getElementById('nuevaFecha').value;
+    const nuevaHora = document.getElementById('nuevaHora').value;
+
+    if (!nuevaFecha || !nuevaHora) {
+        alert('Por favor selecciona una fecha y hora válidas');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/citas/solicitar-modificacion/${idCita}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                fecha: nuevaFecha,
+                hora: nuevaHora
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.message === "Solicitud de modificación enviada") {
+            alert('Solicitud de modificación enviada. La cita será actualizada.');
+            location.reload();
+        } else {
+            alert('Error al solicitar modificación: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al solicitar modificación');
+    }
+}
+
+function verDetalle(idCita) {
+    // Aquí podrías redirigir a una página de detalle o mostrar un modal
+    alert(`Detalle de cita #${idCita} - Esta funcionalidad se puede expandir`);
+}
+</script>
+
+<style>
+.estado-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+.estado-pendiente { background-color: #ffc107; color: #000; }
+.estado-confirmada { background-color: #198754; color: #fff; }
+.estado-en_proceso { background-color: #0dcaf0; color: #000; }
+.estado-completada { background-color: #6c757d; color: #fff; }
+.estado-cancelada { background-color: #dc3545; color: #fff; }
+</style>
+{% endblock %}

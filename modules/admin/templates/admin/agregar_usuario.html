@@ -1,0 +1,74 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="form-container">
+    
+    <div class="form-card">
+        <div class="form-header">
+            <div class="form-title">
+                <i class="fa fa-user-plus"></i>
+                Registrar nuevo usuario
+            </div>
+            <div class="form-subtitle">
+                Complete todos los campos para agregar un nuevo usuario al sistema
+            </div>
+        </div>
+
+        <form action="/admin/frm-usuarios" method="POST">
+            <div class="form-group">
+                <label for="inpUsuario">Usuario</label>
+                <input type="text" class="form-control" id="inpUsuario" placeholder="Ingrese el nombre de usuario" name="inpUsuario" required>
+                <div class="invalid-feedback">
+                    Por favor ingrese un nombre de usuario válido.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="inpNombre">Nombre completo</label>
+                <input type="text" class="form-control" id="inpNombre" placeholder="Ingrese el nombre completo" name="inpNombre" required>
+                <div class="invalid-feedback">
+                    Por favor ingrese un nombre completo válido.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="inpCorreo">Correo electrónico</label>
+                <input type="email" class="form-control" id="inpCorreo" placeholder="usuario@ejemplo.com" name="inpCorreo" required>
+                <div class="invalid-feedback">
+                    Por favor ingrese un correo electrónico válido.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="inpTelefono">Teléfono</label>
+                <input type="tel" class="form-control" id="inpTelefono" placeholder="Ingrese el número de teléfono" name="inpTelefono" required>
+                <div class="invalid-feedback">
+                    Por favor ingrese un número de teléfono válido.
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="slcRol">Rol</label>
+                <select class="form-control" id="slcRol" name="slcRol" required>
+                    <option value="" selected disabled>Seleccione un rol</option>
+                    {% for rol in datos_roles %}
+                    <option value="{{rol.id_rol}}">{{rol.nombre}}</option>
+                    {% endfor %}
+                </select>
+                <div class="invalid-feedback">
+                    Por favor seleccione un rol para el usuario.
+                </div>
+            </div>
+            
+            <div class="btn-form-group">
+                <a href="/admin/usuarios" class="btn btn-outline-danger">
+                    <i class="fa fa-times fa-sm me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn-submit">
+                    <i class="fa fa-save fa-sm me-2"></i>Registrar Usuario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

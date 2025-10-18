@@ -1,0 +1,246 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<!-- Agrega esto después del título y antes de la tabla -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 id="citas-hoy">0</h4>
+                        <p class="mb-0">Citas Hoy</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fa fa-calendar-day fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 id="ingresos-mes">$0</h4>
+                        <p class="mb-0">Ingresos Mes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fa fa-dollar-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 id="citas-pendientes">0</h4>
+                        <p class="mb-0">Pendientes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fa fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 id="total-citas">0</h4>
+                        <p class="mb-0">Total Citas</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fa fa-calendar-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-calendar me-2"></i>Gestión de Citas</h2>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" onclick="filtrarCitas('todas')">Todas</button>
+            <button class="btn btn-outline-warning" onclick="filtrarCitas('pendiente')">Pendientes</button>
+            <button class="btn btn-outline-success" onclick="filtrarCitas('confirmada')">Confirmadas</button>
+            <button class="btn btn-outline-info" onclick="filtrarCitas('en_proceso')">En Proceso</button>
+            <button class="btn btn-outline-secondary" onclick="filtrarCitas('completada')">Completadas</button>
+            <button class="btn btn-outline-danger" onclick="filtrarCitas('cancelada')">Canceladas</button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="tablaCitas">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Vehículo</th>
+                            <th>Fecha y Hora</th>
+                            <th>Servicios</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cita in citas %}
+                        <tr data-estado="{{ cita.estado }}">
+                            <td>{{ cita.id_cita }}</td>
+                            <td>
+                                <strong>{{ cita.nombre_cliente }}</strong><br>
+                                <small class="text-muted">{{ cita.telefono }}</small>
+                            </td>
+                            <td>
+                                {{ cita.marca }} {{ cita.modelo }}<br>
+                                <small class="text-muted">{{ cita.placas }}</small>
+                            </td>
+                            <td>
+                                {{ cita.fecha }}<br>
+                                <small class="text-muted">{{ cita.hora }}</small>
+                            </td>
+                            <td>
+                                <small>{{ cita.servicios or 'Sin servicios' }}</small>
+                            </td>
+                            <td>${{ cita.total }}</td>
+                            <td>
+                                <span class="badge estado-badge estado-{{ cita.estado }}">
+                                    {{ cita.estado|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-info" onclick="verDetalle({{ cita.id_cita }})">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning" onclick="editarCita({{ cita.id_cita }})">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fa fa-cog"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" onclick="cambiarEstado({{ cita.id_cita }}, 'confirmada')">Confirmar</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="cambiarEstado({{ cita.id_cita }}, 'en_proceso')">En Proceso</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="cambiarEstado({{ cita.id_cita }}, 'completada')">Completar</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="cambiarEstado({{ cita.id_cita }}, 'cancelada')">Cancelar</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filtrarCitas(estado) {
+    const filas = document.querySelectorAll('#tablaCitas tbody tr');
+    filas.forEach(fila => {
+        if (estado === 'todas' || fila.dataset.estado === estado) {
+            fila.style.display = '';
+        } else {
+            fila.style.display = 'none';
+        }
+    });
+}
+
+async function cambiarEstado(idCita, nuevoEstado) {
+    if (!confirm('¿Estás seguro de cambiar el estado de esta cita?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/citas/admin/actualizar-estado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id_cita: idCita,
+                estado: nuevoEstado
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.message === "OK") {
+            alert('Estado actualizado correctamente');
+            location.reload();
+        } else {
+            alert('Error al actualizar el estado');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al actualizar el estado');
+    }
+}
+
+function verDetalle(idCita) {
+    window.location.href = `/citas/admin/editar/${idCita}`;
+}
+
+function editarCita(idCita) {
+    window.location.href = `/citas/admin/editar/${idCita}`;
+}
+
+// Cargar estadísticas
+async function cargarEstadisticas() {
+    try {
+        const response = await fetch('/citas/admin/estadisticas');
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error al cargar estadísticas:', data.error);
+            return;
+        }
+        
+        document.getElementById('citas-hoy').textContent = data.citas_hoy;
+        document.getElementById('ingresos-mes').textContent = '$' + data.ingresos_mes.toFixed(2);
+        
+        // Calcular total de citas pendientes
+        const pendientes = data.estados.find(e => e.estado === 'pendiente');
+        document.getElementById('citas-pendientes').textContent = pendientes ? pendientes.total : 0;
+        
+        // Calcular total de todas las citas
+        const totalCitas = data.estados.reduce((sum, estado) => sum + estado.total, 0);
+        document.getElementById('total-citas').textContent = totalCitas;
+        
+    } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+    }
+}
+
+// Llamar al cargar la página
+document.addEventListener('DOMContentLoaded', cargarEstadisticas);
+</script>
+
+<style>
+.estado-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+.estado-pendiente { background-color: #ffc107; color: #000; }
+.estado-confirmada { background-color: #198754; color: #fff; }
+.estado-en_proceso { background-color: #0dcaf0; color: #000; }
+.estado-completada { background-color: #6c757d; color: #fff; }
+.estado-cancelada { background-color: #dc3545; color: #fff; }
+</style>
+{% endblock %}
