@@ -1,8 +1,8 @@
 {% extends 'admin/base.html' %}
+{% block title %}Registrar nuevo usuario{% endblock %}
 
 {% block content %}
 <div class="form-container">
-    
     <div class="form-card">
         <div class="form-header">
             <div class="form-title">
@@ -14,61 +14,114 @@
             </div>
         </div>
 
-        <form action="/admin/frm-usuarios" method="POST">
-            <div class="form-group">
-                <label for="inpUsuario">Usuario</label>
-                <input type="text" class="form-control" id="inpUsuario" placeholder="Ingrese el nombre de usuario" name="inpUsuario" required>
-                <div class="invalid-feedback">
-                    Por favor ingrese un nombre de usuario válido.
+        <form action="{{ url_for('admin.frm_usuarios') }}" method="POST" class="needs-validation" novalidate>
+            <!-- Datos básicos -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="inpUsuario" class="form-label">Usuario</label>
+                    <input type="text" class="form-control" id="inpUsuario" name="inpUsuario"
+                           placeholder="Ingrese el nombre de usuario" required>
+                    <div class="invalid-feedback">Por favor ingrese un nombre de usuario válido.</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="inpNombre" class="form-label">Nombre completo</label>
+                    <input type="text" class="form-control" id="inpNombre" name="inpNombre"
+                           placeholder="Ingrese el nombre completo" required>
+                    <div class="invalid-feedback">Por favor ingrese un nombre completo válido.</div>
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label for="inpNombre">Nombre completo</label>
-                <input type="text" class="form-control" id="inpNombre" placeholder="Ingrese el nombre completo" name="inpNombre" required>
-                <div class="invalid-feedback">
-                    Por favor ingrese un nombre completo válido.
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="inpCorreo" class="form-label">Correo electrónico</label>
+                    <input type="email" class="form-control" id="inpCorreo" name="inpCorreo"
+                           placeholder="usuario@ejemplo.com" required>
+                    <div class="invalid-feedback">Por favor ingrese un correo electrónico válido.</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="inpTelefono" class="form-label">Teléfono</label>
+                    <input type="tel" class="form-control" id="inpTelefono" name="inpTelefono"
+                           placeholder="Ejemplo: 5551234567" pattern="[0-9]{10}" required>
+                    <div class="invalid-feedback">Ingrese un número de teléfono válido (10 dígitos).</div>
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label for="inpCorreo">Correo electrónico</label>
-                <input type="email" class="form-control" id="inpCorreo" placeholder="usuario@ejemplo.com" name="inpCorreo" required>
-                <div class="invalid-feedback">
-                    Por favor ingrese un correo electrónico válido.
+
+            <!-- Datos laborales -->
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="fecha_contratacion" class="form-label">Fecha de contratación</label>
+                    <input type="date" class="form-control" id="fecha_contratacion" name="fecha_contratacion">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="salario" class="form-label">Salario</label>
+                    <input type="number" class="form-control" id="salario" name="salario"
+                           step="0.01" placeholder="Ejemplo: 5000.00">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="turno" class="form-label">Turno</label>
+                    <select class="form-select" id="turno" name="turno" required>
+                        <option value="matutino" selected>Matutino</option>
+                        <option value="vespertino">Vespertino</option>
+                        <option value="nocturno">Nocturno</option>
+                    </select>
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label for="inpTelefono">Teléfono</label>
-                <input type="tel" class="form-control" id="inpTelefono" placeholder="Ingrese el número de teléfono" name="inpTelefono" required>
-                <div class="invalid-feedback">
-                    Por favor ingrese un número de teléfono válido.
+
+            <!-- Rol y Estado -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="slcRol" class="form-label">Rol</label>
+                    <select class="form-select" id="slcRol" name="slcRol" required>
+                        <option value="" selected disabled>Seleccione un rol</option>
+                        {% for rol in datos_roles %}
+                        <option value="{{ rol.id_rol }}">{{ rol.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="invalid-feedback">Por favor seleccione un rol para el usuario.</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="estado" class="form-label">Estado del Usuario</label>
+                    <select class="form-select" id="estado" name="estado" required>
+                        <option value="activo" selected>Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                        <option value="bloqueado">Bloqueado</option>
+                    </select>
+                    <div class="invalid-feedback">Por favor seleccione un estado válido.</div>
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label for="slcRol">Rol</label>
-                <select class="form-control" id="slcRol" name="slcRol" required>
-                    <option value="" selected disabled>Seleccione un rol</option>
-                    {% for rol in datos_roles %}
-                    <option value="{{rol.id_rol}}">{{rol.nombre}}</option>
-                    {% endfor %}
-                </select>
-                <div class="invalid-feedback">
-                    Por favor seleccione un rol para el usuario.
-                </div>
-            </div>
-            
-            <div class="btn-form-group">
-                <a href="/admin/usuarios" class="btn btn-outline-danger">
-                    <i class="fa fa-times fa-sm me-2"></i>Cancelar
+
+            <!-- Botones -->
+            <div class="btn-form-group text-end mt-4">
+                <a href="{{ url_for('admin.usuarios') }}" class="btn btn-outline-danger me-2">
+                    <i class="fa fa-times fa-sm me-1"></i>Cancelar
                 </a>
-                <button type="submit" class="btn-submit">
-                    <i class="fa fa-save fa-sm me-2"></i>Registrar Usuario
+                <button type="submit" class="btn btn-success">
+                    <i class="fa fa-save fa-sm me-1"></i>Registrar Usuario
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<!-- Validación Bootstrap -->
+<script>
+(function () {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+</script>
 {% endblock %}
