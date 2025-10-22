@@ -9,7 +9,7 @@
         </div>
         <div class="table-actions">
             <div class="table-search">
-                <input type="text" placeholder="Buscar servicios...">
+                <input type="text" id="search-input" placeholder="Buscar servicios...">
             </div>
             <a href="/services/agregar-servicio" class="btn-modern btn-modern-success">
                 <i class="fa fa-plus-circle me-2"></i>Agregar Servicio
@@ -18,7 +18,7 @@
     </div>
 
     <div class="table-responsive">
-        <table class="modern-table">
+        <table class="modern-table" id="services-table">
             <thead>
                 <tr>
                     <th class="col-number">No.</th>
@@ -29,7 +29,7 @@
                     <th class="col-actions">Acciones</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="services-tbody">
                 {% for servicio in datos_servicios %}
                 <tr>
                     <td class="col-number">{{ loop.index }}</td>
@@ -49,7 +49,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr>
+                <tr id="no-results-row">
                     <td colspan="6">
                         <div class="empty-state">
                             <div class="empty-state-icon">
@@ -68,4 +68,101 @@
         </table>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const servicesTbody = document.getElementById('services-tbody');
+    const noResultsRow = document.getElementById('no-results-row');
+    const tableCount = document.querySelector('.table-count');
+    const originalCount = {{ datos_servicios|length }};
+
+    // Función para filtrar servicios
+    function filterServices() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const rows = servicesTbody.querySelectorAll('tr');
+        let visibleCount = 0;
+        
+        // Ocultar la fila de "no hay servicios" inicialmente
+        if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+        
+        // Si no hay término de búsqueda, mostrar todas las filas
+        if (searchTerm === '') {
+            rows.forEach(row => {
+                if (row.id !== 'no-results-row') {
+                    row.style.display = '';
+                    visibleCount++;
+                }
+            });
+            
+            // Mostrar la fila de "no hay servicios" si no hay servicios
+            if (visibleCount === 0 && noResultsRow) {
+                noResultsRow.style.display = '';
+            }
+            
+            tableCount.textContent = originalCount + ' servicios';
+            return;
+        }
+        
+        // Filtrar filas según el término de búsqueda
+        rows.forEach(row => {
+            if (row.id === 'no-results-row') return;
+            
+            const nombre = row.cells[1].textContent.toLowerCase();
+            const descripcion = row.cells[2].textContent.toLowerCase();
+            const precio = row.cells[3].textContent.toLowerCase();
+            const duracion = row.cells[4].textContent.toLowerCase();
+            
+            // Mostrar fila si coincide con el término de búsqueda
+            if (nombre.includes(searchTerm) || 
+                descripcion.includes(searchTerm) || 
+                precio.includes(searchTerm) || 
+                duracion.includes(searchTerm)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Mostrar mensaje si no hay resultados
+        if (visibleCount === 0) {
+            if (!noResultsRow) {
+                const newNoResultsRow = document.createElement('tr');
+                newNoResultsRow.innerHTML = `
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fa fa-search"></i>
+                            </div>
+                            <h4>No se encontraron servicios</h4>
+                            <p>Intenta con otros términos de búsqueda.</p>
+                        </div>
+                    </td>
+                `;
+                servicesTbody.appendChild(newNoResultsRow);
+            } else {
+                noResultsRow.style.display = '';
+            }
+        } else if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+        
+        // Actualizar contador
+        tableCount.textContent = visibleCount + ' servicios encontrados';
+    }
+    
+    // Añadir evento de entrada al campo de búsqueda
+    searchInput.addEventListener('input', filterServices);
+    
+    // Añadir evento de tecla Enter para facilitar la búsqueda
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            filterServices();
+        }
+    });
+});
+</script>
 {% endblock %}

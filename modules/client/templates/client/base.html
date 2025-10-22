@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Autolavado · Panel de Cliente{% endblock %}</title>
+
+  {% block extra_css %}
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome para iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-confirm.css') }}">
+  <link rel="stylesheet" href="{{ url_for('client.static', filename='css/client.css') }}">
+  {% endblock %}
+</head>
+
+<body>
+  <!-- Barra superior -->
+  <header class="topbar" role="banner">
+    <div class="container-fluid topbar-inner">
+      <div class="d-flex align-items-center gap-3">
+        <button class="icon-btn d-lg-none" aria-label="Abrir menú" id="openSidebar" aria-controls="sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="brand">
+          <div class="brand-logo" aria-hidden="true">
+            <i class="fas fa-car"></i>
+          </div>
+          <span class="brand-name">Autolavado</span>
+        </div>
+      </div>
+
+      <form class="search d-none d-lg-block" role="search" aria-label="Búsqueda global">
+        <label class="visually-hidden" for="q">Buscar</label>
+        <input id="q" class="search-input" type="search" placeholder="Buscar: servicios, citas..." />
+      </form>
+
+      <div class="user">
+        <div class="user-meta d-none d-sm-block">
+          <div class="user-name">{{ current_user.nombre if current_user else 'Cliente' }}</div>
+          <div class="user-mail">{{ current_user.email if current_user else '' }}</div>
+        </div>
+        <div class="avatar" aria-hidden="true">
+          <i class="fas fa-user"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar" role="navigation" aria-label="Menú principal">
+      <nav class="nav-rail">
+        <a class="nav-link {% if request.endpoint == 'client.cliente_inicio' %}active{% endif %}" 
+           href="{{ url_for('client.cliente_inicio') }}"
+           aria-current="{% if request.endpoint == 'client.cliente_inicio' %}page{% else %}false{% endif %}">
+          <span class="nav-ico">
+            <i class="fas fa-home"></i>
+          </span>
+          <span class="nav-txt">Dashboard</span>
+        </a>
+        
+        <a class="nav-link {% if 'cita' in request.endpoint %}active{% endif %}" 
+           href="{{ url_for('client.citas') }}">
+          <span class="nav-ico">
+            <i class="fas fa-calendar-alt"></i>
+          </span>
+          <span class="nav-txt">Mis Citas</span>
+        </a>
+            
+        <a class="nav-link {% if 'perfil' in request.endpoint %}active{% endif %}" 
+           href="{{ url_for('client.perfil') }}">
+          <span class="nav-ico">
+            <i class="fas fa-user"></i>
+          </span>
+          <span class="nav-txt">Mi Perfil</span>
+        </a>
+        
+        <a class="nav-link" href="{{ url_for('client.historial') }}">
+          <span class="nav-ico">
+            <i class="fas fa-history"></i>
+          </span>
+          <span class="nav-txt">Historial</span>
+        </a>
+        
+        <div class="nav-sep" aria-hidden="true"></div>
+        
+        <a class="nav-link text-danger" href="{{ url_for('auth.salir') }}">
+          <span class="nav-ico">
+            <i class="fas fa-sign-out-alt"></i>
+          </span>
+          <span class="nav-txt">Cerrar Sesión</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="content" role="main">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery-confirm.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/funciones.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    // Toggle sidebar en móviles
+    document.getElementById('openSidebar').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+    
+    // Cerrar sidebar al hacer clic fuera de él en móviles
+    document.addEventListener('click', function(event) {
+      const sidebar = document.getElementById('sidebar');
+      const openBtn = document.getElementById('openSidebar');
+      
+      if (window.innerWidth < 992 && 
+          !sidebar.contains(event.target) && 
+          !openBtn.contains(event.target) && 
+          sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+      }
+    });
+  </script>
+  
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

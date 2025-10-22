@@ -113,7 +113,7 @@ def nueva_cita_cliente():
     return render_template('citas/nueva_cita.html')
 
 @citas_bp.route('/seleccionar-servicios')
-def seleccionar_servicios_cliente():
+def seleccionar_servicios():
     """Página para seleccionar servicios y paquetes"""
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)

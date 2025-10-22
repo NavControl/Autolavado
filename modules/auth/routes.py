@@ -90,11 +90,15 @@ def do_login():
                 else:
                     session.pop('username_rem', None)
 
-                #Redirecciona dependiendo del rol
-                if id_rol_user == 1: #Administrador
+                # Redirecciona dependiendo del rol
+                if id_rol_user == 1:  # Administrador
+                    session['user_type'] = 'admin'
                     return redirect(url_for('admin.inicio'))
-                else: # Cliente
-                    return redirect(url_for('client.cliente_inicio'))
+                elif id_rol_user == 2:  # Cliente
+                    session['user_type'] = 'client'
+                    return redirect(url_for('client.perfil'))
+                else:
+                    return redirect(url_for('auth.login'))
 
             else:
                 mensaje = "Usuario y/o contraseña incorrectas"
