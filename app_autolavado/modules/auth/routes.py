@@ -344,10 +344,3 @@ def frm_change_password():
         
     mensaje = 'Las contraseñas no coinciden'
     return redirect(url_for('auth.change_password', mensaje=mensaje, tipo_mensaje='danger'))
-
-@auth_bp.route('/salir')
-def salir():
-    # Cierra la sesión actual
-    session.clear()
-    mensaje = "Sesión cerrada correctamente"
-    return redirect(url_for('auth.login', mensaje=mensaje, tipo_mensaje='success'))

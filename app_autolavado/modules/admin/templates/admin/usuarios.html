@@ -1,9 +1,7 @@
 {% extends 'admin/base.html' %}
-{% block title %}Gestión de Usuarios{% endblock %}
 
 {% block content %}
 <div class="table-container">
-    <!-- 🧭 Encabezado de la tabla -->
     <div class="table-header">
         <div class="table-title">
             <h2><i class="fa fa-users me-2"></i>Gestión de Usuarios</h2>
@@ -11,85 +9,57 @@
         </div>
         <div class="table-actions">
             <div class="table-search">
-                <input type="text" placeholder="Buscar usuarios..." id="buscadorUsuarios" onkeyup="filtrarUsuarios()">
+                <input type="text" id="search-input" placeholder="Buscar usuarios...">
             </div>
-            <a href="{{ url_for('admin.agregar_usuario') }}" class="btn-modern btn-modern-success">
+            <a href="/admin/agregar-usuario" class="btn-modern btn-modern-success">
                 <i class="fa fa-plus-circle fa-sm me-2"></i>Agregar Usuario
             </a>
         </div>
     </div>
 
-    <!-- 📋 Tabla de usuarios -->
     <div class="table-responsive">
-        <table class="modern-table" id="tablaUsuarios">
+        <table class="modern-table" id="users-table">
             <thead>
                 <tr>
-                    <th>No.</th>
+                    <th class="col-number">No.</th>
+                    <th>Usuario</th>
                     <th>Nombre completo</th>
                     <th>Correo</th>
-                    <th>Rol</th>
-                    <th>Turno</th>
-                    <th>Estado</th>
+                    <th>Teléfono</th>
                     <th class="col-actions">Acciones</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="users-tbody">
                 {% for datos in datos_usuarios %}
-                <tr id="fila-{{ datos.id_usuario }}">
-                    <td>{{ loop.index }}</td>
+                <tr>
+                    <td class="col-number">{{ loop.index }}</td>
+                    <td>
+                        <span class="user-name">{{ datos.username }}</span>
+                    </td>
                     <td>{{ datos.nombre_completo }}</td>
                     <td>{{ datos.correo }}</td>
-                    <td>
-                        <span class="badge 
-                            {% if datos.rol_nombre == 'Administrador' %} bg-danger 
-                            {% elif datos.rol_nombre == 'Recepcionista' %} bg-primary
-                            {% elif datos.rol_nombre == 'Lavador' %} bg-success
-                            {% else %} bg-secondary {% endif %}">
-                            {{ datos.rol_nombre }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if datos.turno %}
-                            <span class="badge bg-info text-dark text-capitalize">{{ datos.turno }}</span>
-                        {% else %}
-                            <span class="text-muted">-</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if datos.estado == 'activo' %}
-                            <span class="badge bg-success">Activo</span>
-                        {% elif datos.estado == 'bloqueado' %}
-                            <span class="badge bg-danger">Bloqueado</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Inactivo</span>
-                        {% endif %}
-                    </td>
+                    <td>{{ datos.telefono }}</td>
                     <td class="col-actions">
                         <div class="action-buttons">
-                            <button class="btn-action btn-action-view" title="Ver detalles" onclick="mostrarDetalles({{ datos.id_usuario }})">
-                                <i class="fa fa-eye fa-sm"></i>
-                            </button>
-                            <a href="{{ url_for('admin.editar_usuario', id_usuario=datos.id_usuario) }}" class="btn-action btn-action-edit" title="Editar usuario">
+                            <a href="/admin/editar-usuario/{{ datos.id_usuario }}" class="btn-action btn-action-edit" title="Editar usuario">
                                 <i class="fa fa-edit fa-sm"></i>
                             </a>
-                            {% if datos.rol_nombre != 'Administrador' %}
                             <button class="btn-action btn-action-delete" onclick="eliminar_usuario('{{ datos.id_usuario }}')" title="Eliminar usuario">
                                 <i class="fa fa-trash fa-sm"></i>
                             </button>
-                            {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% else %}
-                <tr>
-                    <td colspan="7">
+                <tr id="no-results-row">
+                    <td colspan="6">
                         <div class="empty-state">
                             <div class="empty-state-icon">
                                 <i class="fa fa-users"></i>
                             </div>
                             <h4>No hay usuarios registrados</h4>
                             <p>Comienza agregando el primer usuario al sistema.</p>
-                            <a href="{{ url_for('admin.agregar_usuario') }}" class="btn-modern btn-modern-success">
+                            <a href="/admin/agregar-usuario" class="btn-modern btn-modern-success">
                                 <i class="fa fa-plus-circle fa-sm me-2"></i>Agregar Primer Usuario
                             </a>
                         </div>
@@ -101,12 +71,100 @@
     </div>
 </div>
 
-<!-- 🧾 Panel de detalles dinámico -->
-<div id="detalleUsuario" class="detalle-usuario hidden">
-    <div class="detalle-header">
-        <h3><i class="fa fa-user-circle me-2"></i>Detalles del Usuario</h3>
-        <button class="btn-cerrar" onclick="cerrarDetalles()"><i class="fa fa-times"></i></button>
-    </div>
-    <div id="contenidoDetalle"></div>
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const usersTbody = document.getElementById('users-tbody');
+    const noResultsRow = document.getElementById('no-results-row');
+    const tableCount = document.querySelector('.table-count');
+    const originalCount = {{ datos_usuarios|length }};
+
+    // Función para filtrar usuarios
+    function filterUsers() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const rows = usersTbody.querySelectorAll('tr');
+        let visibleCount = 0;
+        
+        // Ocultar la fila de "no hay usuarios" inicialmente
+        if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+        
+        // Si no hay término de búsqueda, mostrar todas las filas
+        if (searchTerm === '') {
+            rows.forEach(row => {
+                if (row.id !== 'no-results-row') {
+                    row.style.display = '';
+                    visibleCount++;
+                }
+            });
+            
+            // Mostrar la fila de "no hay usuarios" si no hay usuarios
+            if (visibleCount === 0 && noResultsRow) {
+                noResultsRow.style.display = '';
+            }
+            
+            tableCount.textContent = originalCount + ' usuarios';
+            return;
+        }
+        
+        // Filtrar filas según el término de búsqueda
+        rows.forEach(row => {
+            if (row.id === 'no-results-row') return;
+            
+            const username = row.cells[1].textContent.toLowerCase();
+            const nombreCompleto = row.cells[2].textContent.toLowerCase();
+            const correo = row.cells[3].textContent.toLowerCase();
+            const telefono = row.cells[4].textContent.toLowerCase();
+            
+            // Mostrar fila si coincide con el término de búsqueda
+            if (username.includes(searchTerm) || 
+                nombreCompleto.includes(searchTerm) || 
+                correo.includes(searchTerm) || 
+                telefono.includes(searchTerm)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Mostrar mensaje si no hay resultados
+        if (visibleCount === 0) {
+            if (!noResultsRow) {
+                const newNoResultsRow = document.createElement('tr');
+                newNoResultsRow.innerHTML = `
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fa fa-search"></i>
+                            </div>
+                            <h4>No se encontraron usuarios</h4>
+                            <p>Intenta con otros términos de búsqueda.</p>
+                        </div>
+                    </td>
+                `;
+                usersTbody.appendChild(newNoResultsRow);
+            } else {
+                noResultsRow.style.display = '';
+            }
+        } else if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+        
+        // Actualizar contador
+        tableCount.textContent = visibleCount + ' usuarios encontrados';
+    }
+    
+    // Añadir evento de entrada al campo de búsqueda
+    searchInput.addEventListener('input', filterUsers);
+    
+    // Añadir evento de tecla Enter para facilitar la búsqueda
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            filterUsers();
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -1,7 +1,7 @@
 from flask import Blueprint
 
 # Crea un Blueprint
-client_bp = Blueprint('client', __name__, 
+citas_bp = Blueprint('citas', __name__, 
                     template_folder='templates',
                     static_folder='static')
 

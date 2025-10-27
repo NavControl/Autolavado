@@ -1,0 +1,352 @@
+{% extends 'client/base.html' %}
+
+{% block title %}Seleccionar Fecha y Hora - Autolavado{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<style>
+.steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 2rem;
+}
+.steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: 1;
+}
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+}
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 8px;
+    border: 3px solid white;
+}
+.step.completed .step-number {
+    background-color: #28a745;
+    color: white;
+}
+.step.active .step-number {
+    background-color: #007bff;
+    color: white;
+}
+.step-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-align: center;
+}
+.step.active .step-label {
+    color: #007bff;
+    font-weight: bold;
+}
+.hora-slot {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    transition: all 0.3s ease;
+}
+.hora-slot:hover {
+    transform: translateY(-1px);
+}
+.card {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Seleccionar Fecha y Hora
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Steps -->
+                    <div class="steps">
+                        <div class="step completed">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Inicio</div>
+                        </div>
+                        <div class="step completed">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Servicios</div>
+                        </div>
+                        <div class="step active">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Fecha y Hora</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-label">Vehículo</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">5</div>
+                            <div class="step-label">Confirmar</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fecha" class="form-label text-dark">
+                                    <i class="fas fa-calendar-day me-2"></i>Selecciona una fecha
+                                </label>
+                                <input type="date" class="form-control" id="fecha">
+                            </div>
+                            <div id="calendario-disponibilidad" class="mb-4">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Por favor selecciona una fecha para ver los horarios disponibles
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-dark">
+                                        <i class="fas fa-receipt me-2"></i>Resumen de Servicios
+                                    </h6>
+                                    <div id="resumen-servicios">
+                                        <p class="text-muted mb-0">Cargando servicios...</p>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                        <strong class="text-dark">Total: $<span id="total-precio">0</span></strong>
+                                        <strong class="text-dark">Duración: <span id="total-duracion">0</span> min</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('client.seleccionar_servicios') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Anterior
+                        </a>
+                        <button id="btn-continuar" class="btn btn-primary" disabled>
+                            Continuar <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('fecha');
+    const calendarioDiv = document.getElementById('calendario-disponibilidad');
+    const btnContinuar = document.getElementById('btn-continuar');
+    let fechaSeleccionada = null;
+    let horaSeleccionada = null;
+
+    // Establecer fecha mínima como hoy
+    const today = new Date().toISOString().split('T')[0];
+    fechaInput.setAttribute('min', today);
+
+    // Cargar resumen de servicios desde la sesión
+    async function cargarResumen() {
+        try {
+            const serviciosSeleccionados = {{ session.get('servicios_seleccionados', []) | tojson }};
+            
+            if (serviciosSeleccionados && serviciosSeleccionados.length > 0) {
+                mostrarResumen(serviciosSeleccionados);
+            } else {
+                // Intentar cargar desde la sesión via API
+                try {
+                    const response = await fetch('{{ url_for("citas.api_servicios_seleccionados") }}');
+
+                    const data = await response.json();
+                    if (data.servicios && data.servicios.length > 0) {
+                        mostrarResumen(data.servicios);
+                    } else {
+                        mostrarResumenVacio();
+                    }
+                } catch (error) {
+                    console.error('Error al cargar servicios:', error);
+                    mostrarResumenVacio();
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarResumenVacio();
+        }
+    }
+
+    function mostrarResumenVacio() {
+        const resumenDiv = document.getElementById('resumen-servicios');
+        resumenDiv.innerHTML = '<p class="text-muted mb-0">No hay servicios seleccionados</p>';
+    }
+
+    function mostrarResumen(servicios) {
+        const resumenDiv = document.getElementById('resumen-servicios');
+        const totalPrecio = document.getElementById('total-precio');
+        const totalDuracion = document.getElementById('total-duracion');
+
+        let html = '';
+        let total = 0;
+        let duracionTotal = 0;
+
+        servicios.forEach(servicio => {
+            html += `<div class="d-flex justify-content-between mb-1">
+                <span class="text-dark small">${servicio.nombre}</span>
+                <span class="text-dark small">$${servicio.precio}</span>
+            </div>`;
+            total += parseFloat(servicio.precio);
+            duracionTotal += parseInt(servicio.duracion);
+        });
+
+        resumenDiv.innerHTML = html;
+        totalPrecio.textContent = total.toFixed(2);
+        totalDuracion.textContent = duracionTotal;
+    }
+
+    // Cargar horarios disponibles cuando se selecciona una fecha
+    fechaInput.addEventListener('change', async function() {
+        const fecha = this.value;
+        if (!fecha) return;
+
+        try {
+            calendarioDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Buscando horarios disponibles...</p>
+                </div>
+            `;
+
+            const response = await fetch('{{ url_for("client.api_obtener_horarios") }}?fecha=' + fecha);
+
+            const data = await response.json();
+
+            if (data.success && data.horarios && data.horarios.length > 0) {
+                mostrarHorariosDisponibles(data.horarios, fecha);
+                fechaSeleccionada = fecha;
+            } else {
+                calendarioDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${data.message || 'No hay horarios disponibles para esta fecha'}
+                    </div>
+                `;
+                fechaSeleccionada = null;
+                horaSeleccionada = null;
+                btnContinuar.disabled = true;
+            }
+        } catch (error) {
+            console.error('Error al cargar horarios:', error);
+            calendarioDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-times-circle me-2"></i>
+                    Error al cargar horarios disponibles
+                </div>
+            `;
+        }
+    });
+
+    function mostrarHorariosDisponibles(horarios, fecha) {
+        let html = `
+            <h6 class="text-dark">
+                <i class="fas fa-clock me-2"></i>Horarios disponibles
+            </h6>
+            <p class="text-muted small mb-3">${fecha}</p>
+            <div class="row g-2">
+        `;
+
+        horarios.forEach(horario => {
+            html += `
+                <div class="col-6 col-md-4">
+                    <button type="button" class="btn btn-outline-primary w-100 hora-slot" data-hora="${horario}">
+                        ${horario}
+                    </button>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        calendarioDiv.innerHTML = html;
+
+        // Agregar event listeners a los botones de hora
+        document.querySelectorAll('.hora-slot').forEach(button => {
+            button.addEventListener('click', function() {
+                // Quitar selección anterior
+                document.querySelectorAll('.hora-slot').forEach(btn => {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                });
+                // Seleccionar nueva hora
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+                horaSeleccionada = this.dataset.hora;
+                btnContinuar.disabled = false;
+            });
+        });
+    }
+
+    // Continuar al siguiente paso
+    btnContinuar.addEventListener('click', async function() {
+        if (!fechaSeleccionada || !horaSeleccionada) {
+            alert('Por favor selecciona una fecha y hora');
+            return;
+        }
+
+        try {
+            const response = await fetch('{{ url_for("client.guardar_fecha") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    fecha: fechaSeleccionada,
+                    hora: horaSeleccionada
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = '{{ url_for("client.informacion_vehiculo_cliente") }}';
+            } else {
+                alert('Error al guardar la fecha: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al guardar la fecha y hora');
+        }
+    });
+
+    // Cargar resumen al inicio
+    cargarResumen();
+});
+</script>
+{% endblock %}

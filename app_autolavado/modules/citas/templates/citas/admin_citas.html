@@ -5,124 +5,146 @@
     <!-- Header de tabla -->
     <div class="table-header">
         <div class="table-title">
-            <h2>
-                <i class="fas fa-concierge-bell me-2"></i>Gestión de Servicios
+            <h2 style="color: white;">
+                <i class="fas fa-calendar-alt me-2"></i>Gestión de Citas
             </h2>
-            <span class="table-count">{{ datos_servicios|length }} servicios</span>
+            <span class="table-count">{{ citas|length }} citas</span>
         </div>
         <div class="table-actions">
             <div class="table-search">
                 <i class="fas fa-search"></i>
-                <input type="text" id="search-input" placeholder="Buscar servicios...">
+                <input type="text" id="search-input" placeholder="Buscar citas...">
             </div>
-            <a href="/services/agregar-servicio" class="btn-modern btn-modern-success">
-                <i class="fas fa-plus-circle"></i>Agregar Servicio
-            </a>
+            <div class="filters-modern">
+                <button class="filter-btn-modern active" data-filter="todas">
+                    <span class="filter-dot"></span>Todas
+                </button>
+                <button class="filter-btn-modern" data-filter="en_proceso">
+                    <span class="filter-dot" style="background: #0dcaf0;"></span>En Proceso
+                </button>
+                <button class="filter-btn-modern" data-filter="completada">
+                    <span class="filter-dot" style="background: #6c757d;"></span>Completadas
+                </button>
+                <button class="filter-btn-modern" data-filter="cancelada">
+                    <span class="filter-dot" style="background: #dc3545;"></span>Canceladas
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Mostrar mensajes flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show mb-4" role="alert">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
-                        <span>{{ message }}</span>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <!-- Tabla de servicios -->
+    <!-- Tabla moderna -->
     <div class="table-responsive">
-        <table class="modern-table" id="services-table">
+        <table class="modern-table" id="citas-table">
             <thead>
                 <tr>
                     <th class="col-number">#</th>
-                    <th>Servicio</th>
-                    <th>Descripción</th>
-                    <th>Precio</th>
-                    <th>Duración</th>
+                    <th>Cliente</th>
+                    <th>Vehículo</th>
+                    <th>Fecha y Hora</th>
+                    <th>Servicios</th>
+                    <th>Total</th>
                     <th>Estado</th>
                     <th class="col-actions">Acciones</th>
                 </tr>
             </thead>
-            <tbody id="services-tbody">
-                {% for servicio in datos_servicios %}
-                <tr class="service-row">
-                    <td class="col-number">{{ loop.index }}</td>
+            <tbody id="citas-tbody">
+                {% for cita in citas %}
+                <tr class="cita-row" data-estado="{{ cita.estado }}">
+                    <td class="col-number">{{ cita.id_cita }}</td>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="service-icon">
-                                <i class="fas fa-concierge-bell"></i>
+                            <div class="user-avatar">
+                                {{ cita.nombre_cliente[0] if cita.nombre_cliente else '?' }}
                             </div>
                             <div class="ms-3">
-                                <div class="service-name">{{ servicio.nombre }}</div>
-                                <div class="service-id text-muted small">
-                                    ID: {{ servicio.id_servicio }}
+                                <div class="user-name">{{ cita.nombre_cliente or 'N/A' }}</div>
+                                <div class="user-phone text-muted small">
+                                    <i class="fas fa-phone me-1"></i>{{ cita.telefono or 'Sin teléfono' }}
                                 </div>
                             </div>
                         </div>
                     </td>
                     <td>
-                        <div class="service-description">
-                            {{ servicio.descripcion or 'Sin descripción' }}
+                        <div class="vehicle-info">
+                            <div class="vehicle-details">
+                                <strong>{{ cita.marca }} {{ cita.modelo }}</strong>
+                            </div>
+                            <div class="vehicle-plates text-muted small">
+                                <i class="fas fa-tag me-1"></i>{{ cita.placas or 'Sin placas' }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="datetime-info">
+                            <div class="date-text">
+                                <i class="fas fa-calendar me-1 text-primary"></i>
+                                {{ cita.fecha }}
+                            </div>
+                            <div class="time-text text-muted small">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ cita.hora }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="services-info">
+                            <span class="services-text">{{ cita.servicios or 'Sin servicios' }}</span>
                         </div>
                     </td>
                     <td>
                         <div class="price-info">
-                            <span class="price-amount">${{ servicio.precio }}</span>
+                            <span class="price-amount">${{ cita.total or '0' }}</span>
                         </div>
                     </td>
                     <td>
-                        <div class="duration-info">
-                            <span class="badge badge-primary">
-                                <i class="fas fa-clock me-1"></i>{{ servicio.duracion }} min
-                            </span>
-                        </div>
-                    </td>
-                    <td>
-                        {% if servicio.activo %}
-                        <span class="badge badge-success">
-                            <i class="fas fa-circle me-1"></i>Activo
+                        <span class="estado-badge estado-{{ cita.estado }}">
+                            <i class="fas fa-circle me-1"></i>{{ cita.estado|title }}
                         </span>
-                        {% else %}
-                        <span class="badge badge-secondary">
-                            <i class="fas fa-circle me-1"></i>Inactivo
-                        </span>
-                        {% endif %}
                     </td>
                     <td class="col-actions">
                         <div class="action-buttons">
-                            <a href="/services/editar-servicio/{{ servicio.id_servicio }}" 
-                               class="btn-action btn-action-edit" 
-                               title="Editar servicio">
+                            <button class="btn-action btn-action-edit" 
+                                    onclick="editarCita({{ cita.id_cita }})"
+                                    title="Editar cita">
                                 <i class="fas fa-edit"></i>
-                            </a>
-                            <button class="btn-action btn-action-delete delete-service-btn" 
-                                    data-id="{{ servicio.id_servicio }}"
-                                    data-name="{{ servicio.nombre }}"
-                                    title="Eliminar servicio">
-                                <i class="fas fa-trash"></i>
                             </button>
+                            <div class="dropdown action-dropdown">
+                                <button class="btn-action btn-action-menu" 
+                                        data-bs-toggle="dropdown"
+                                        title="Más opciones">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="cambiarEstado({{ cita.id_cita }}, 'en_proceso')">
+                                            <i class="fas fa-play-circle text-info me-2"></i>En Proceso
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="cambiarEstado({{ cita.id_cita }}, 'completada')">
+                                            <i class="fas fa-check-double text-primary me-2"></i>Completar
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#" onclick="cambiarEstado({{ cita.id_cita }}, 'cancelada')">
+                                            <i class="fas fa-times-circle me-2"></i>Cancelar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr id="no-results-row">
-                    <td colspan="7">
+                    <td colspan="8">
                         <div class="empty-state">
                             <div class="empty-state-icon">
-                                <i class="fas fa-concierge-bell"></i>
+                                <i class="fas fa-calendar-alt"></i>
                             </div>
-                            <h4>No hay servicios registrados</h4>
-                            <p>Comienza agregando el primer servicio al sistema.</p>
-                            <a href="/services/agregar-servicio" class="btn-modern btn-modern-success">
-                                <i class="fas fa-plus-circle"></i>Agregar Primer Servicio
-                            </a>
+                            <h4>No hay citas registradas</h4>
+                            <p>No se han encontrado citas en el sistema.</p>
                         </div>
                     </td>
                 </tr>
@@ -131,53 +153,46 @@
         </table>
     </div>
 </div>
-
-<!-- Modal de confirmación para eliminar servicio -->
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmDeleteModalLabel">
-                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                    Confirmar Eliminación
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>¿Estás seguro de que quieres eliminar el servicio "<strong id="serviceNameToDelete"></strong>"?</p>
-                <p class="text-muted small">Esta acción no se puede deshacer y puede afectar las citas futuras.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>Cancelar
-                </button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-                    <i class="fas fa-trash me-2"></i>Eliminar Servicio
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Filtros modernos
+    const filterButtons = document.querySelectorAll('.filter-btn-modern');
+    
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Actualizar botones activos
+            filterButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filtrar citas
+            filtrarCitas(filter);
+        });
+    });
+
+    // Configurar búsqueda
+    setupSearch();
+});
+
+// Función para configurar la búsqueda
+function setupSearch() {
     const searchInput = document.getElementById('search-input');
-    const servicesTbody = document.getElementById('services-tbody');
+    const citasTbody = document.getElementById('citas-tbody');
     const noResultsRow = document.getElementById('no-results-row');
     const tableCount = document.querySelector('.table-count');
-    const originalCount = {{ datos_servicios|length }};
-    let currentServiceId = null;
-    let currentServiceName = null;
+    const originalCount = {{ citas|length }};
 
-    // Función para filtrar servicios
-    function filterServices() {
+    // Función para filtrar citas por búsqueda
+    function filterCitasBySearch() {
         const searchTerm = searchInput.value.toLowerCase().trim();
-        const rows = servicesTbody.querySelectorAll('.service-row');
+        const rows = citasTbody.querySelectorAll('.cita-row');
         let visibleCount = 0;
         
-        // Ocultar la fila de "no hay servicios" inicialmente
+        // Ocultar la fila de "no hay citas" inicialmente
         if (noResultsRow) {
             noResultsRow.style.display = 'none';
         }
@@ -190,27 +205,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 removeHighlights(row);
             });
             
-            // Mostrar la fila de "no hay servicios" si no hay servicios
+            // Mostrar la fila de "no hay citas" si no hay citas
             if (visibleCount === 0 && noResultsRow) {
                 noResultsRow.style.display = '';
             }
             
-            tableCount.textContent = originalCount + ' servicios';
+            tableCount.textContent = originalCount + ' citas';
             return;
         }
         
         // Filtrar filas según el término de búsqueda
         rows.forEach(row => {
-            const nombre = row.cells[1].textContent.toLowerCase();
-            const descripcion = row.cells[2].textContent.toLowerCase();
-            const precio = row.cells[3].textContent.toLowerCase();
-            const duracion = row.cells[4].textContent.toLowerCase();
+            const cliente = row.cells[1].textContent.toLowerCase();
+            const vehiculo = row.cells[2].textContent.toLowerCase();
+            const fecha = row.cells[3].textContent.toLowerCase();
+            const servicios = row.cells[4].textContent.toLowerCase();
+            const total = row.cells[5].textContent.toLowerCase();
+            const estado = row.cells[6].textContent.toLowerCase();
             
             // Mostrar fila si coincide con el término de búsqueda
-            if (nombre.includes(searchTerm) || 
-                descripcion.includes(searchTerm) || 
-                precio.includes(searchTerm) || 
-                duracion.includes(searchTerm)) {
+            if (cliente.includes(searchTerm) || 
+                vehiculo.includes(searchTerm) || 
+                fecha.includes(searchTerm) || 
+                servicios.includes(searchTerm) || 
+                total.includes(searchTerm) || 
+                estado.includes(searchTerm)) {
                 row.style.display = '';
                 visibleCount++;
                 
@@ -224,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mostrar mensaje si no hay resultados
         if (visibleCount === 0) {
-            const existingNoResults = servicesTbody.querySelector('.no-results-state');
+            const existingNoResults = citasTbody.querySelector('.no-results-state');
             if (existingNoResults) {
                 existingNoResults.remove();
             }
@@ -232,10 +251,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const newNoResultsRow = document.createElement('tr');
             newNoResultsRow.className = 'no-results-state-row';
             newNoResultsRow.innerHTML = `
-                <td colspan="7">
+                <td colspan="8">
                     <div class="no-results-state">
                         <i class="fas fa-search no-results-icon"></i>
-                        <h4>No se encontraron servicios</h4>
+                        <h4>No se encontraron citas</h4>
                         <p class="text-muted mb-3">No hay resultados que coincidan con "${searchTerm}"</p>
                         <button type="button" class="btn-modern btn-modern-primary" onclick="clearSearch()">
                             <i class="fas fa-times"></i>Limpiar búsqueda
@@ -243,17 +262,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </td>
             `;
-            servicesTbody.appendChild(newNoResultsRow);
+            citasTbody.appendChild(newNoResultsRow);
         } else {
             // Remover mensaje de no resultados si existe
-            const noResultsRow = servicesTbody.querySelector('.no-results-state-row');
+            const noResultsRow = citasTbody.querySelector('.no-results-state-row');
             if (noResultsRow) {
                 noResultsRow.remove();
             }
         }
         
         // Actualizar contador
-        tableCount.textContent = visibleCount + (searchTerm ? ' servicios encontrados' : ' servicios');
+        tableCount.textContent = visibleCount + (searchTerm ? ' citas encontradas' : ' citas');
     }
     
     // Función para resaltar términos de búsqueda
@@ -309,148 +328,90 @@ document.addEventListener('DOMContentLoaded', function() {
     // Función global para limpiar búsqueda
     window.clearSearch = function() {
         searchInput.value = '';
-        filterServices();
+        filterCitasBySearch();
         searchInput.focus();
     };
     
     // Eventos de búsqueda
-    searchInput.addEventListener('input', filterServices);
+    searchInput.addEventListener('input', filterCitasBySearch);
     searchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             clearSearch();
         }
     });
     
-    // Eliminar servicio
-    document.querySelectorAll('.delete-service-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            currentServiceId = this.dataset.id;
-            currentServiceName = this.dataset.name;
-            
-            // Actualizar mensaje del modal
-            document.getElementById('serviceNameToDelete').textContent = currentServiceName;
-            
-            const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-            modal.show();
-        });
-    });
-    
-    // Confirmar eliminación
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        if (!currentServiceId) return;
-        
-        // Aquí puedes implementar la llamada AJAX para eliminar el servicio
-        fetch('/services/eliminar-servicio', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id_servicio: currentServiceId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success || data.message === 'OK') {
-                // Cerrar modal y recargar
-                bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
-                location.reload();
-            } else {
-                alert('Error al eliminar el servicio: ' + (data.error || ''));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al eliminar el servicio');
-        });
-    });
-    
     // Focus en el campo de búsqueda al cargar la página
     searchInput.focus();
-});
+}
 
-// Función para eliminar servicio (compatibilidad con código existente)
-function eliminar_servicio(id_servicio) {
-    const button = document.querySelector(`.delete-service-btn[data-id="${id_servicio}"]`);
-    if (button) {
-        button.click();
+function filtrarCitas(estado) {
+    const filas = document.querySelectorAll('#citas-tbody .cita-row');
+    
+    filas.forEach(fila => {
+        if (estado === 'todas' || fila.dataset.estado === estado) {
+            fila.style.display = '';
+        } else {
+            fila.style.display = 'none';
+        }
+    });
+}
+
+async function cambiarEstado(idCita, nuevoEstado) {
+    const estados = {
+        'en_proceso': 'En Proceso',
+        'completada': 'Completada', 
+        'cancelada': 'Cancelada'
+    };
+    
+    if (!confirm(`¿Estás seguro de cambiar el estado de esta cita a "${estados[nuevoEstado]}"?`)) {
+        return;
     }
+
+    try {
+        const response = await fetch('/citas/admin/actualizar-estado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id_cita: idCita,
+                estado: nuevoEstado
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.message === "OK") {
+            showAlert('¡Éxito!', 'Estado actualizado correctamente', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('Error', 'Error al actualizar el estado: ' + (data.error || ''), 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error', 'Error al actualizar el estado', 'error');
+    }
+}
+
+function editarCita(idCita) {
+    window.location.href = `/citas/admin/editar/${idCita}`;
+}
+
+// Función para mostrar alertas
+function showAlert(title, message, type) {
+    // Puedes implementar tu propio sistema de alertas o usar el de Bootstrap
+    alert(`${title}: ${message}`);
 }
 </script>
 
 <style>
-    /* Estilos específicos para servicios */
-    .service-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: var(--bs-primary);
-        color: var(--bs-white);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-    }
-    
-    .service-name {
-        font-weight: 600;
-        color: var(--bs-heading-color);
-    }
-    
-    .service-id {
-        font-size: 0.8rem;
-    }
-    
-    .service-description {
-        max-width: 300px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    
-    .price-amount {
-        font-weight: 600;
-        color: var(--bs-success);
-        font-size: 1.1rem;
-    }
-    
-    /* Botones modernos - mismos estilos que la tabla de clientes */
-    .btn-modern {
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        border: 1px solid;
-        cursor: pointer;
-    }
-    
-
-    
-     .btn-modern-primary {
-        background: var(--bs-primary);
-        border-color: var(--bs-primary);
-        color: var(--bs-white);
-    }
-    
-    .btn-modern-primary:hover {
-        background: var(--bs-primary-dark);
-        border-color: var(--bs-primary-dark);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
-        color: var(--bs-white);
-    }
-    
-
-    
-    /* Asegurar que los estilos de la tabla sean consistentes */
     .table-container {
         max-width: 1400px;
         margin: 0 auto;
         padding: 1.5rem 1rem;
     }
     
+    /* Header de tabla moderno */
     .table-header {
         display: flex;
         justify-content: space-between;
@@ -469,7 +430,6 @@ function eliminar_servicio(id_servicio) {
     }
     
     .table-title h2 {
-        color: var(--bs-heading-color);
         font-weight: 600;
         margin: 0;
         font-size: 1.5rem;
@@ -530,6 +490,46 @@ function eliminar_servicio(id_servicio) {
         pointer-events: none;
     }
     
+    /* Filtros modernos */
+    .filters-modern {
+        display: flex;
+        gap: 0.5rem;
+        background: var(--bs-light);
+        padding: 0.5rem;
+        border-radius: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn-modern {
+        background: transparent;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--bs-secondary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    
+    .filter-btn-modern:hover,
+    .filter-btn-modern.active {
+        background: var(--bs-white);
+        color: var(--bs-dark);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--bs-secondary);
+    }
+    
     /* Tabla moderna */
     .modern-table {
         width: 100%;
@@ -583,36 +583,151 @@ function eliminar_servicio(id_servicio) {
     }
     
     .col-actions {
-        width: 140px;
+        width: 120px;
         text-align: center;
     }
     
-    /* Badges y estados */
-    .badge {
-        font-size: 0.75rem;
-        padding: 0.4rem 0.75rem;
-        border-radius: 6px;
+    /* Avatar de usuario */
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        color: var(--bs-white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .user-name {
+        font-weight: 600;
+        color: var(--bs-heading-color);
+    }
+    
+    .user-phone {
+        font-size: 0.8rem;
+    }
+    
+    /* Información de vehículo */
+    .vehicle-details {
         font-weight: 500;
     }
     
-    .badge-success {
-        background: var(--bs-success);
-        color: var(--bs-white);
+    .vehicle-plates {
+        font-size: 0.85rem;
     }
     
-    .badge-primary {
+    /* Información de fecha y hora */
+    .datetime-info {
+        white-space: nowrap;
+    }
+    
+    .date-text {
+        font-weight: 500;
+    }
+    
+    .time-text {
+        font-size: 0.85rem;
+    }
+    
+    /* Información de servicios */
+    .services-text {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: block;
+    }
+    
+    .price-amount {
+        font-weight: 600;
+        color: var(--bs-success);
+        font-size: 1.1rem;
+    }
+    
+    /* Badges de estado mejorados */
+    .estado-badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+    
+    .estado-pendiente {
+        background: rgba(255, 193, 7, 0.15);
+        color: #856404;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+    
+    .estado-confirmada {
+        background: rgba(25, 135, 84, 0.15);
+        color: #0f5132;
+        border: 1px solid rgba(25, 135, 84, 0.3);
+    }
+    
+    .estado-en_proceso {
+        background: rgba(13, 202, 240, 0.15);
+        color: #055160;
+        border: 1px solid rgba(13, 202, 240, 0.3);
+    }
+    
+    .estado-completada {
+        background: rgba(108, 117, 125, 0.15);
+        color: #495057;
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+    
+    .estado-cancelada {
+        background: rgba(220, 53, 69, 0.15);
+        color: #721c24;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    
+    /* Botones modernos */
+    .btn-modern {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid;
+    }
+    
+    .btn-modern-primary {
         background: var(--bs-primary);
+        border-color: var(--bs-primary);
         color: var(--bs-white);
     }
     
-    .badge-info {
-        background: var(--bs-info);
+    .btn-modern-primary:hover {
+        background: var(--bs-primary-dark);
+        border-color: var(--bs-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
         color: var(--bs-white);
     }
     
-    .badge-secondary {
-        background: var(--bs-secondary);
-        color: var(--bs-white);
+    /* Dropdown de acciones mejorado */
+    .action-dropdown {
+        display: inline-block;
+    }
+    
+    .btn-action-menu {
+        border-color: #6c757d;
+        color: #6c757d;
+    }
+    
+    .btn-action-menu:hover {
+        background: #6c757d;
+        color: white;
     }
     
     /* Botones de acción pequeños */
@@ -632,27 +747,16 @@ function eliminar_servicio(id_servicio) {
         border: 1px solid;
         transition: all 0.2s ease;
         text-decoration: none;
+        background: transparent;
     }
     
     .btn-action-edit {
         border-color: var(--bs-primary);
         color: var(--bs-primary);
-        background: transparent;
     }
     
     .btn-action-edit:hover {
         background: var(--bs-primary);
-        color: var(--bs-white);
-    }
-    
-    .btn-action-delete {
-        border-color: var(--bs-danger);
-        color: var(--bs-danger);
-        background: transparent;
-    }
-    
-    .btn-action-delete:hover {
-        background: var(--bs-danger);
         color: var(--bs-white);
     }
     
@@ -725,6 +829,10 @@ function eliminar_servicio(id_servicio) {
             justify-content: space-between;
         }
         
+        .filters-modern {
+            justify-content: center;
+        }
+        
         .table-search {
             max-width: 100%;
             min-width: auto;
@@ -759,8 +867,8 @@ function eliminar_servicio(id_servicio) {
             height: 32px;
         }
         
-        .service-description {
-            max-width: 200px;
+        .services-text {
+            max-width: 150px;
         }
     }
     
@@ -801,8 +909,17 @@ function eliminar_servicio(id_servicio) {
             order: -1;
         }
         
-        .service-description {
-            max-width: 150px;
+        .services-text {
+            max-width: 120px;
+        }
+        
+        .filters-modern {
+            gap: 0.25rem;
+        }
+        
+        .filter-btn-modern {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
         }
     }
 </style>
