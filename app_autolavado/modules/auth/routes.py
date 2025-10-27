@@ -64,6 +64,12 @@ def do_login():
             if bcrypt.checkpw(password_bytes, hashed_password):
                 id_rol_user = datos_usuarios[0]["id_rol"]
 
+                # GUARDAR INFORMACIÓN DEL USUARIO EN LA SESIÓN (ESTO ES CLAVE)
+                session['user_id'] = datos_usuarios[0]['id_usuario']
+                session['username'] = datos_usuarios[0]['nombre_completo']
+                session['id_rol'] = datos_usuarios[0]['id_rol']
+                session['logged_in'] = True
+
                 #Guardar información en la tabla de sesiones
                 conn = get_db_connection()
                 cur = conn.cursor(dictionary=True)
@@ -84,11 +90,15 @@ def do_login():
                 else:
                     session.pop('username_rem', None)
 
-                #Redirecciona dependiendo del rol
-                if id_rol_user == 1: #Administrador
+                # Redirecciona dependiendo del rol
+                if id_rol_user == 1:  # Administrador
+                    session['user_type'] = 'admin'
                     return redirect(url_for('admin.inicio'))
-                print("OK")
-
+                elif id_rol_user == 2:  # Cliente
+                    session['user_type'] = 'client'
+                    return redirect(url_for('client.perfil'))
+                else:
+                    return redirect(url_for('auth.login'))
 
             else:
                 mensaje = "Usuario y/o contraseña incorrectas"
