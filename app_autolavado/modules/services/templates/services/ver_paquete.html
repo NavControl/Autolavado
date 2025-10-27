@@ -1,0 +1,89 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-box me-2"></i>{{ paquete.nombre }}</h2>
+        <div>
+            <a href="/services/editar-paquete/{{ paquete.id_paquete }}" class="btn btn-warning">
+                <i class="fa fa-edit me-2"></i>Editar
+            </a>
+            <a href="/services/paquetes" class="btn btn-outline-secondary">
+                <i class="fa fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Servicios Incluidos</h5>
+                </div>
+                <div class="card-body">
+                    {% if servicios %}
+                    <div class="row">
+                        {% for servicio in servicios %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ servicio.nombre }}</h6>
+                                    <p class="card-text small text-muted">{{ servicio.descripcion or 'Sin descripción' }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-success fw-bold">${{ servicio.precio }}</span>
+                                        <span class="text-muted small">{{ servicio.duracion }} min</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No hay servicios en este paquete.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Resumen del Paquete</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Descripción:</strong><br>{{ paquete.descripcion or 'Sin descripción' }}</p>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Total de servicios:</span>
+                            <span class="badge bg-primary">{{ servicios|length }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Duración total:</span>
+                            <span class="badge bg-info">{{ paquete.duracion_total }} min</span>
+                        </div>
+                    </div>
+                    
+                    <div class="border-top pt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold">Precio individual:</span>
+                            <span class="text-muted">${{ '%0.2f'|format(servicios|sum(attribute='precio')) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold fs-5">Precio del paquete:</span>
+                            <span class="text-success fs-4 fw-bold">${{ paquete.precio }}</span>
+                        </div>
+                        {% set ahorro = servicios|sum(attribute='precio') - paquete.precio %}
+                        {% if ahorro > 0 %}
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="fw-bold">Ahorro:</span>
+                            <span class="text-success fw-bold">${{ '%0.2f'|format(ahorro) }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

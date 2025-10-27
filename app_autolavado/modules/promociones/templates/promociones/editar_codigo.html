@@ -1,0 +1,67 @@
+{% extends 'admin/base.html' %}
+{% block title %}Editar Código de Descuento{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="fa-solid fa-pen text-primary me-2"></i>Editar Código de Descuento</h4>
+    <a href="{{ url_for('promociones_bp.lista_codigos') }}" class="btn btn-secondary">
+      <i class="fa fa-arrow-left"></i> Volver
+    </a>
+  </div>
+
+  <form method="POST" class="card shadow-sm p-4 bg-white rounded">
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label class="form-label fw-bold">Código</label>
+        <input type="text" class="form-control" name="codigo" value="{{ codigo.codigo }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-bold">Tipo</label>
+        <select class="form-select" name="tipo" required>
+          <option value="porcentaje" {% if codigo.tipo == 'porcentaje' %}selected{% endif %}>Porcentaje (%)</option>
+          <option value="monto" {% if codigo.tipo == 'monto' %}selected{% endif %}>Monto ($)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <label class="form-label fw-bold">Valor</label>
+        <input type="number" class="form-control" name="valor" value="{{ codigo.valor }}" step="0.01" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-bold">Inicio</label>
+        <input type="date" class="form-control" name="fecha_inicio" value="{{ codigo.fecha_inicio|safe }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-bold">Fin</label>
+        <input type="date" class="form-control" name="fecha_fin" value="{{ codigo.fecha_fin|safe }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-bold">Usos Máximos</label>
+        <input type="number" class="form-control" name="usos_maximos" value="{{ codigo.usos_maximos or 0 }}" min="1">
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label class="form-label fw-bold">Usos Actuales</label>
+        <input type="number" class="form-control bg-light" value="{{ codigo.usos_actuales or 0 }}" disabled>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-bold">Estado</label>
+        <select class="form-select" name="estado">
+          <option value="activo" {% if codigo.estado == 'activo' %}selected{% endif %}>Activo</option>
+          <option value="inactivo" {% if codigo.estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="text-end">
+      <button type="submit" class="btn btn-primary px-4">
+        <i class="fa fa-save"></i> Actualizar
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,1030 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Gestión de Clientes - Autolavado{% endblock %}
+
+{% block content %}
+<div class="table-container">
+    <!-- Header de tabla -->
+    <div class="table-header">
+        <div class="table-title">
+            <h2>
+                <i class="fas fa-users"></i>Gestión de Clientes
+            </h2>
+            <span class="table-count">{{ datos_clientes|length }} clientes</span>
+        </div>
+        <div class="table-actions">
+            <div class="table-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Buscar clientes...">
+            </div>
+            <button class="btn-modern btn-modern-success" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                <i class="fas fa-plus-circle"></i>Agregar Cliente
+            </button>
+        </div>
+    </div>
+
+    <!-- Mostrar mensajes flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show mb-4" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Tabla de clientes -->
+    <div class="table-responsive">
+        <table class="modern-table" id="clients-table">
+            <thead>
+                <tr>
+                    <th class="col-number">#</th>
+                    <th>Cliente</th>
+                    <th>Contacto</th>
+                    <th>Información</th>
+                    <th>Documentos</th>
+                    <th>Estado</th>
+                    <th class="col-actions">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="clients-tbody">
+                {% for cliente in datos_clientes %}
+                <tr class="client-row">
+                    <td class="col-number">{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar">
+                                {{ cliente.nombre_completo[0] if cliente.nombre_completo else '?' }}
+                            </div>
+                            <div class="ms-3">
+                                <div class="user-name">{{ cliente.nombre_completo or 'N/A' }}</div>
+                                <div class="user-folio text-muted small">
+                                    Folio: {{ cliente.folio or 'N/A' }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="contact-info">
+                            <div class="contact-email">
+                                <i class="fas fa-envelope me-2 text-primary"></i>
+                                {{ cliente.correo }}
+                            </div>
+                            {% if cliente.telefono %}
+                            <div class="contact-phone text-muted small mt-1">
+                                <i class="fas fa-phone me-2"></i>
+                                {{ cliente.telefono }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="info-details">
+                            <div class="text-muted small">
+                                <i class="fas fa-calendar me-2"></i>
+                                Registro: {{ cliente.fecha_registro.strftime('%d/%m/%Y') if cliente.fecha_registro else 'N/A' }}
+                            </div>
+                            {% if cliente.fecha_nacimiento %}
+                            <div class="text-muted small mt-1">
+                                <i class="fas fa-birthday-cake me-2"></i>
+                                Nacimiento: {{ cliente.fecha_nacimiento.strftime('%d/%m/%Y') if cliente.fecha_nacimiento else 'N/A' }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="document-info">
+                            {% if cliente.curp %}
+                            <div class="badge badge-info mb-1">
+                                CURP: {{ cliente.curp }}
+                            </div>
+                            {% endif %}
+                            {% if cliente.rfc %}
+                            <div class="badge badge-secondary">
+                                RFC: {{ cliente.rfc }}
+                            </div>
+                            {% endif %}
+                            {% if not cliente.curp and not cliente.rfc %}
+                            <span class="text-muted small">Sin documentos</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-success">
+                            <i class="fas fa-circle me-1"></i>Activo
+                        </span>
+                    </td>
+                    <td class="col-actions">
+                        <div class="action-buttons">
+                            <a href="{{ url_for('admin.editar_cliente', id_usuario=cliente.id_usuario) }}" 
+                               class="btn-action btn-action-edit" 
+                               title="Editar cliente">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn-action btn-action-view view-btn" 
+                                    data-id="{{ cliente.id_usuario }}"
+                                    title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-action btn-action-delete delete-btn" 
+                                    data-id="{{ cliente.id_usuario }}"
+                                    title="Eliminar cliente">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr id="no-results-row">
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h4>No hay clientes registrados</h4>
+                            <p>Comienza agregando el primer cliente al sistema.</p>
+                            <button class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                                <i class="fas fa-plus-circle"></i>Agregar Primer Cliente
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para Agregar Cliente -->
+<div class="modal fade" id="addClientModal" tabindex="-1" aria-labelledby="addClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addClientModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>Agregar Nuevo Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.agregar_cliente') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="inpNombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="inpNombre" name="inpNombre" required 
+                                   placeholder="Ingresa el nombre completo">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="inpCorreo" class="form-label">Correo Electrónico *</label>
+                            <input type="email" class="form-control" id="inpCorreo" name="inpCorreo" required 
+                                   placeholder="correo@ejemplo.com">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="inpTelefono" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="inpTelefono" name="inpTelefono" 
+                                   placeholder="+52 123 456 7890">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="inpFolio" class="form-label">Folio</label>
+                            <input type="text" class="form-control" id="inpFolio" name="inpFolio" 
+                                   placeholder="Folio único del cliente">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="inpCURP" class="form-label">CURP</label>
+                            <input type="text" class="form-control" id="inpCURP" name="inpCURP" 
+                                   placeholder="Clave Única de Registro de Población">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="inpRFC" class="form-label">RFC</label>
+                            <input type="text" class="form-control" id="inpRFC" name="inpRFC" 
+                                   placeholder="Registro Federal de Contribuyentes">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="inpFechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control" id="inpFechaNacimiento" name="inpFechaNacimiento">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="inpUsuario" class="form-label">Nombre de Usuario *</label>
+                            <input type="text" class="form-control" id="inpUsuario" name="inpUsuario" required 
+                                   placeholder="Nombre de usuario para acceso">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Ver Cliente -->
+<div class="modal fade" id="viewClientModal" tabindex="-1" aria-labelledby="viewClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewClientModalLabel">
+                    <i class="fas fa-user-circle me-2"></i>Detalles del Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-user me-2 text-primary"></i>Nombre:</strong> 
+                        <span id="viewNombre" class="ms-2">Cargando...</span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-envelope me-2 text-primary"></i>Correo:</strong> 
+                        <span id="viewCorreo" class="ms-2">Cargando...</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-phone me-2 text-primary"></i>Teléfono:</strong> 
+                        <span id="viewTelefono" class="ms-2">Cargando...</span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-id-card me-2 text-primary"></i>Folio:</strong> 
+                        <span id="viewFolio" class="ms-2">Cargando...</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-address-card me-2 text-primary"></i>CURP:</strong> 
+                        <span id="viewCURP" class="ms-2">Cargando...</span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-file-alt me-2 text-primary"></i>RFC:</strong> 
+                        <span id="viewRFC" class="ms-2">Cargando...</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-birthday-cake me-2 text-primary"></i>Fecha Nacimiento:</strong> 
+                        <span id="viewFechaNacimiento" class="ms-2">Cargando...</span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-user-tag me-2 text-primary"></i>Usuario:</strong> 
+                        <span id="viewUsuario" class="ms-2">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar cliente -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar este cliente?</p>
+                <p class="text-muted small">Esta acción no se puede deshacer y se perderán todos los datos del cliente.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i>Eliminar Cliente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const clientsTbody = document.getElementById('clients-tbody');
+    const noResultsRow = document.getElementById('no-results-row');
+    const tableCount = document.querySelector('.table-count');
+    const originalCount = {{ datos_clientes|length }};
+    let currentClientId = null;
+
+    // Función para filtrar clientes
+    function filterClients() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const rows = clientsTbody.querySelectorAll('.client-row');
+        let visibleCount = 0;
+        
+        // Ocultar la fila de "no hay clientes" inicialmente
+        if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+        
+        // Si no hay término de búsqueda, mostrar todas las filas
+        if (searchTerm === '') {
+            rows.forEach(row => {
+                row.style.display = '';
+                visibleCount++;
+                removeHighlights(row);
+            });
+            
+            // Mostrar la fila de "no hay clientes" si no hay clientes
+            if (visibleCount === 0 && noResultsRow) {
+                noResultsRow.style.display = '';
+            }
+            
+            tableCount.textContent = originalCount + ' clientes';
+            return;
+        }
+        
+        // Filtrar filas según el término de búsqueda
+        rows.forEach(row => {
+            const nombre = row.cells[1].textContent.toLowerCase();
+            const contacto = row.cells[2].textContent.toLowerCase();
+            const documentos = row.cells[4].textContent.toLowerCase();
+            
+            // Mostrar fila si coincide con el término de búsqueda
+            if (nombre.includes(searchTerm) || 
+                contacto.includes(searchTerm) || 
+                documentos.includes(searchTerm)) {
+                row.style.display = '';
+                visibleCount++;
+                
+                // Resaltar el término buscado
+                highlightSearchTerm(row, searchTerm);
+            } else {
+                row.style.display = 'none';
+                removeHighlights(row);
+            }
+        });
+        
+        // Mostrar mensaje si no hay resultados
+        if (visibleCount === 0) {
+            const existingNoResults = clientsTbody.querySelector('.no-results-state');
+            if (existingNoResults) {
+                existingNoResults.remove();
+            }
+            
+            const newNoResultsRow = document.createElement('tr');
+            newNoResultsRow.className = 'no-results-state-row';
+            newNoResultsRow.innerHTML = `
+                <td colspan="7">
+                    <div class="no-results-state">
+                        <i class="fas fa-search no-results-icon"></i>
+                        <h4>No se encontraron clientes</h4>
+                        <p class="text-muted mb-3">No hay resultados que coincidan con "${searchTerm}"</p>
+                        <button type="button" class="btn-modern btn-modern-primary" onclick="clearSearch()">
+                            <i class="fas fa-times"></i>Limpiar búsqueda
+                        </button>
+                    </div>
+                </td>
+            `;
+            clientsTbody.appendChild(newNoResultsRow);
+        } else {
+            // Remover mensaje de no resultados si existe
+            const noResultsRow = clientsTbody.querySelector('.no-results-state-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+        
+        // Actualizar contador
+        tableCount.textContent = visibleCount + (searchTerm ? ' clientes encontrados' : ' clientes');
+    }
+    
+    // Función para resaltar términos de búsqueda
+    function highlightSearchTerm(row, term) {
+        removeHighlights(row);
+        
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+            if (cell.classList.contains('col-number') || cell.classList.contains('col-actions')) return;
+            
+            const originalHTML = cell.innerHTML;
+            const text = cell.textContent;
+            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            const newHTML = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+            
+            if (newHTML !== text) {
+                // Preservar la estructura HTML original pero reemplazar el texto
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = originalHTML;
+                
+                function replaceTextInNode(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const newText = node.textContent.replace(regex, '<mark class="search-highlight">$1</mark>');
+                        if (newText !== node.textContent) {
+                            const newSpan = document.createElement('span');
+                            newSpan.innerHTML = newText;
+                            node.parentNode.replaceChild(newSpan, node);
+                        }
+                    } else {
+                        node.childNodes.forEach(child => replaceTextInNode(child));
+                    }
+                }
+                
+                replaceTextInNode(tempDiv);
+                cell.innerHTML = tempDiv.innerHTML;
+            }
+        });
+    }
+    
+    // Función para remover resaltados
+    function removeHighlights(row) {
+        const highlights = row.querySelectorAll('mark.search-highlight');
+        highlights.forEach(highlight => {
+            const parent = highlight.parentNode;
+            while (highlight.firstChild) {
+                parent.insertBefore(highlight.firstChild, highlight);
+            }
+            parent.removeChild(highlight);
+            parent.normalize();
+        });
+    }
+    
+    // Función global para limpiar búsqueda
+    window.clearSearch = function() {
+        searchInput.value = '';
+        filterClients();
+        searchInput.focus();
+    };
+    
+    // Eventos de búsqueda
+    searchInput.addEventListener('input', filterClients);
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            clearSearch();
+        }
+    });
+    
+    // Ver detalles del cliente
+    document.querySelectorAll('.view-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const idUsuario = this.dataset.id;
+            const button = this;
+            
+            console.log(`🟡 Intentando cargar cliente ID: ${idUsuario}`);
+            
+            // Mostrar loading
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            fetch(`/admin/obtener-cliente/${idUsuario}`)
+                .then(response => {
+                    console.log(`🟡 Respuesta recibida, status: ${response.status}`);
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(cliente => {
+                    console.log('🟡 Datos del cliente recibidos:', cliente);
+                    
+                    // Verificar si hay error en la respuesta
+                    if (cliente.error) {
+                        throw new Error(cliente.error);
+                    }
+                    
+                    // Función auxiliar para mostrar datos seguros
+                    const mostrarDato = (elementId, valor) => {
+                        const elemento = document.getElementById(elementId);
+                        if (elemento) {
+                            elemento.textContent = valor || 'N/A';
+                        } else {
+                            console.error(`❌ Elemento no encontrado: ${elementId}`);
+                        }
+                    };
+                    
+                    // Llenar el modal con los datos
+                    mostrarDato('viewNombre', cliente.nombre_completo);
+                    mostrarDato('viewCorreo', cliente.correo);
+                    mostrarDato('viewTelefono', cliente.telefono);
+                    mostrarDato('viewFolio', cliente.folio);
+                    mostrarDato('viewCURP', cliente.curp);
+                    mostrarDato('viewRFC', cliente.rfc);
+                    mostrarDato('viewFechaNacimiento', cliente.fecha_nacimiento);
+                    mostrarDato('viewUsuario', cliente.username);
+                    
+                    console.log('🟡 Mostrando modal...');
+                    
+                    // Mostrar el modal
+                    const modalElement = document.getElementById('viewClientModal');
+                    if (modalElement) {
+                        const modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                        console.log('✅ Modal mostrado correctamente');
+                    } else {
+                        throw new Error('No se encontró el modal en el DOM');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error completo:', error);
+                    alert('Error al cargar los datos del cliente: ' + error.message);
+                })
+                .finally(() => {
+                    // Restaurar el botón
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                    console.log('🟡 Botón restaurado');
+                });
+        });
+    });
+    
+    // Eliminar cliente
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            currentClientId = this.dataset.id;
+            const clientName = this.closest('tr').querySelector('.user-name').textContent.trim();
+            
+            // Actualizar mensaje del modal
+            document.querySelector('#confirmDeleteModal .modal-body p').textContent = 
+                `¿Estás seguro de que quieres eliminar al cliente "${clientName}"?`;
+            
+            const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+            modal.show();
+        });
+    });
+    
+    // Confirmar eliminación
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (!currentClientId) return;
+        
+        fetch('/admin/eliminar-cliente', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id_usuario: currentClientId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'OK' || data.message === 'Cliente eliminado correctamente') {
+                // Cerrar modal y recargar
+                bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
+                location.reload();
+            } else {
+                alert('Error al eliminar el cliente: ' + (data.error || ''));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el cliente');
+        });
+    });
+    
+    // Focus en el campo de búsqueda al cargar la página
+    searchInput.focus();
+});
+</script>
+
+<style>
+    .table-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+    
+    /* Header de tabla moderno */
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        gap: 1.5rem;
+    }
+    
+    .table-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .table-title h2 {
+        color: var(--bs-heading-color);
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        white-space: nowrap;
+    }
+    
+    .table-count {
+        background: var(--bs-primary);
+        color: var(--bs-white);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+    
+    .table-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        justify-content: flex-end;
+        min-width: 0;
+    }
+    
+    .table-search {
+        position: relative;
+        flex: 1;
+        max-width: 400px;
+        min-width: 250px;
+    }
+    
+    .table-search input {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        width: 100%;
+        transition: all 0.2s ease;
+        background: var(--bs-white);
+    }
+    
+    .table-search input:focus {
+        outline: none;
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.1);
+    }
+    
+    .table-search i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--bs-secondary);
+        pointer-events: none;
+    }
+    
+    /* Tabla moderna */
+    .modern-table {
+        width: 100%;
+        background: var(--bs-white);
+        border-radius: 12px;
+        border: 1px solid var(--bs-border-color);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    .modern-table thead {
+        background: var(--bs-light);
+    }
+    
+    .modern-table th {
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--bs-heading-color);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--bs-border-color);
+        white-space: nowrap;
+    }
+    
+    .modern-table td {
+        padding: 1.25rem 1.25rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        vertical-align: middle;
+        color: var(--bs-body-color);
+    }
+    
+    .modern-table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .modern-table tbody tr:hover {
+        background: rgba(var(--bs-primary-rgb), 0.02);
+    }
+    
+    .modern-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Columnas específicas */
+    .col-number {
+        width: 60px;
+        text-align: center;
+        color: var(--bs-secondary);
+        font-weight: 500;
+    }
+    
+    .col-actions {
+        width: 140px;
+        text-align: center;
+    }
+    
+    /* Badges y estados */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    
+    .badge-success {
+        background: var(--bs-success);
+        color: var(--bs-white);
+    }
+    
+    .badge-primary {
+        background: var(--bs-primary);
+        color: var(--bs-white);
+    }
+    
+    .badge-info {
+        background: var(--bs-info);
+        color: var(--bs-white);
+    }
+    
+    .badge-secondary {
+        background: var(--bs-secondary);
+        color: var(--bs-white);
+    }
+    
+    /* Botones de acción */
+    .btn-modern {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid;
+    }
+    
+    .btn-modern-primary {
+            background: var(--bs-primary);
+            border-color: var(--bs-primary);
+            color: var(--bs-white);
+    }
+    
+    .btn-modern-primary:hover {
+        background: var(--bs-primary-dark);
+        border-color: var(--bs-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+        color: var(--bs-white);
+    }
+    
+    /* Botones de acción pequeños */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    
+    .btn-action-edit {
+        border-color: var(--bs-primary);
+        color: var(--bs-primary);
+        background: transparent;
+    }
+    
+    .btn-action-edit:hover {
+        background: var(--bs-primary);
+        color: var(--bs-white);
+    }
+    
+    .btn-action-view {
+        border-color: var(--bs-info);
+        color: var(--bs-info);
+        background: transparent;
+    }
+    
+    .btn-action-view:hover {
+        background: var(--bs-info);
+        color: var(--bs-white);
+    }
+    
+    .btn-action-delete {
+        border-color: var(--bs-danger);
+        color: var(--bs-danger);
+        background: transparent;
+    }
+    
+    .btn-action-delete:hover {
+        background: var(--bs-danger);
+        color: var(--bs-white);
+    }
+    
+    /* Avatar de usuario */
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        color: var(--bs-white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .user-name {
+        font-weight: 600;
+        color: var(--bs-heading-color);
+    }
+    
+    .user-folio {
+        font-size: 0.8rem;
+    }
+    
+    /* Información de contacto */
+    .contact-email {
+        font-weight: 500;
+        color: var(--bs-body-color);
+    }
+    
+    .contact-phone {
+        font-size: 0.85rem;
+    }
+    
+    /* Estado vacío */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--bs-secondary);
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--bs-secondary);
+        opacity: 0.5;
+    }
+    
+    .empty-state h4 {
+        color: var(--bs-heading-color);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .empty-state p {
+        margin-bottom: 2rem;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    
+    /* Estados de búsqueda */
+    .search-highlight {
+        background-color: rgba(var(--bs-warning-rgb), 0.3);
+        color: inherit;
+        padding: 0.1rem 0.2rem;
+        border-radius: 3px;
+        font-weight: 600;
+    }
+    
+    .no-results-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--bs-secondary);
+    }
+    
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .table-search {
+            max-width: 350px;
+        }
+    }
+    
+    @media (max-width: 1024px) {
+        .table-search {
+            max-width: 300px;
+        }
+    }
+    
+    @media (max-width: 900px) {
+        .table-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .table-title {
+            justify-content: space-between;
+        }
+        
+        .table-actions {
+            justify-content: space-between;
+        }
+        
+        .table-search {
+            max-width: 100%;
+            min-width: auto;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .table-container {
+            padding: 1rem 0.75rem;
+        }
+        
+        .modern-table {
+            border-radius: 8px;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 1rem 0.75rem;
+        }
+        
+        .table-title h2 {
+            font-size: 1.25rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .btn-action {
+            width: 32px;
+            height: 32px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .table-title {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .table-title h2 {
+            font-size: 1.25rem;
+        }
+        
+        .modern-table {
+            font-size: 0.875rem;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .empty-state {
+            padding: 2rem 1rem;
+        }
+        
+        .empty-state-icon {
+            font-size: 2.5rem;
+        }
+        
+        .table-actions {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .table-search {
+            order: -1;
+        }
+    }
+</style>
+{% endblock %}

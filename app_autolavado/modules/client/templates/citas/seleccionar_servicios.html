@@ -1,0 +1,385 @@
+{% extends 'client/base.html' %}
+
+{% block title %}Seleccionar Servicios - Autolavado{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<style>
+.steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 2rem;
+}
+.steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: 1;
+}
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+}
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 8px;
+    border: 3px solid white;
+}
+.step.completed .step-number {
+    background-color: #28a745;
+    color: white;
+}
+.step.active .step-number {
+    background-color: #007bff;
+    color: white;
+}
+.step-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-align: center;
+}
+.step.active .step-label {
+    color: #007bff;
+    font-weight: bold;
+}
+.servicio-card:hover, .paquete-card:hover {
+    border-color: #007bff;
+    cursor: pointer;
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+.card {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+.form-check-input {
+    margin-top: 0.1rem;
+}
+.servicio-card .card-body, .paquete-card .card-body {
+    padding: 1.25rem;
+}
+
+/* Nuevos estilos para selección múltiple */
+.servicio-card.selected, .paquete-card.selected {
+    border: 2px solid #007bff;
+    background-color: #f8f9fa;
+}
+.servicio-checkbox:checked + label .card-title,
+.paquete-checkbox:checked + label .card-title {
+    color: #007bff;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Seleccionar Servicios
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Steps -->
+                    <div class="steps">
+                        <div class="step completed">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Inicio</div>
+                        </div>
+                        <div class="step active">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Servicios</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Fecha y Hora</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-label">Vehículo</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">5</div>
+                            <div class="step-label">Confirmar</div>
+                        </div>
+                    </div>
+
+                    <!-- Servicios Individuales -->
+                    <div class="mb-5">
+                        <h5 class="mb-3 text-dark">
+                            <i class="fas fa-cog me-2"></i>Servicios Individuales
+                        </h5>
+                        <p class="text-muted mb-3">Selecciona uno o más servicios individuales</p>
+                        <div class="row" id="servicios-container">
+                            {% for servicio in servicios %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card servicio-card h-100" data-id="{{ servicio.id_servicio }}" data-tipo="servicio" data-precio="{{ servicio.precio }}" data-duracion="{{ servicio.duracion }}">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input servicio-checkbox" type="checkbox" 
+                                                   id="servicio-{{ servicio.id_servicio }}">
+                                            <label class="form-check-label w-100" for="servicio-{{ servicio.id_servicio }}">
+                                                <h6 class="card-title text-dark">{{ servicio.nombre }}</h6>
+                                                <p class="card-text text-muted small">{{ servicio.descripcion }}</p>
+                                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                                    <span class="badge bg-primary">${{ servicio.precio }}</span>
+                                                    <span class="badge bg-secondary">{{ servicio.duracion }} min</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Paquetes -->
+                    <div class="mb-4">
+                        <h5 class="mb-3 text-dark">
+                            <i class="fas fa-box me-2"></i>Paquetes
+                        </h5>
+                        <p class="text-muted mb-3">Selecciona un paquete (opcional, se puede combinar con servicios individuales)</p>
+                        <div class="row" id="paquetes-container">
+                            {% for paquete in paquetes %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card paquete-card h-100" data-id="{{ paquete.id_paquete }}" data-tipo="paquete" data-precio="{{ paquete.precio }}" data-duracion="{{ paquete.duracion_total }}">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input paquete-checkbox" type="checkbox" 
+                                                   id="paquete-{{ paquete.id_paquete }}">
+                                            <label class="form-check-label w-100" for="paquete-{{ paquete.id_paquete }}">
+                                                <h6 class="card-title text-dark">{{ paquete.nombre }}</h6>
+                                                <p class="card-text text-muted small">{{ paquete.descripcion }}</p>
+                                                <p class="card-text small"><strong>Incluye:</strong> {{ paquete.servicios_incluidos }}</p>
+                                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                                    <span class="badge bg-success">${{ paquete.precio }}</span>
+                                                    <span class="badge bg-secondary">{{ paquete.duracion_total }} min</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Resumen -->
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="text-dark">
+                                <i class="fas fa-receipt me-2"></i>Resumen de Selección
+                            </h6>
+                            <div id="resumen-servicios">
+                                <p class="text-muted mb-0">No hay servicios seleccionados</p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                <strong class="text-dark">Total: $<span id="total-precio">0</span></strong>
+                                <strong class="text-dark">Duración: <span id="total-duracion">0</span> min</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('client.nueva_cita') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Anterior
+                        </a>
+                        <button id="btn-continuar" class="btn btn-primary" disabled>
+                            Continuar <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let serviciosSeleccionados = [];
+
+function actualizarResumen() {
+    const resumen = document.getElementById('resumen-servicios');
+    const totalPrecio = document.getElementById('total-precio');
+    const totalDuracion = document.getElementById('total-duracion');
+    const btnContinuar = document.getElementById('btn-continuar');
+
+    if (serviciosSeleccionados.length === 0) {
+        resumen.innerHTML = '<p class="text-muted mb-0">No hay servicios seleccionados</p>';
+        totalPrecio.textContent = '0';
+        totalDuracion.textContent = '0';
+        btnContinuar.disabled = true;
+        return;
+    }
+
+    let html = '';
+    let total = 0;
+    let duracionTotal = 0;
+
+    serviciosSeleccionados.forEach(servicio => {
+        html += `<div class="d-flex justify-content-between mb-2">
+            <div>
+                <span class="text-dark fw-medium">${servicio.nombre}</span>
+                <br>
+                <small class="text-muted">${servicio.duracion} min</small>
+            </div>
+            <span class="text-primary fw-bold">$${servicio.precio}</span>
+        </div>`;
+        total += parseFloat(servicio.precio);
+        duracionTotal += parseInt(servicio.duracion);
+    });
+
+    resumen.innerHTML = html;
+    totalPrecio.textContent = total.toFixed(2);
+    totalDuracion.textContent = duracionTotal;
+    btnContinuar.disabled = false;
+}
+
+// Event listeners para checkboxes de servicios individuales
+document.querySelectorAll('.servicio-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const card = this.closest('.servicio-card');
+        const id = card.dataset.id;
+        const tipo = card.dataset.tipo;
+        const precio = parseFloat(card.dataset.precio);
+        const duracion = parseInt(card.dataset.duracion);
+        const nombre = card.querySelector('.card-title').textContent;
+
+        if (this.checked) {
+            // Agregar servicio seleccionado
+            serviciosSeleccionados.push({
+                id: id,
+                tipo: tipo,
+                nombre: nombre,
+                precio: precio,
+                duracion: duracion
+            });
+            card.classList.add('selected');
+        } else {
+            // Remover servicio deseleccionado
+            serviciosSeleccionados = serviciosSeleccionados.filter(s => !(s.id === id && s.tipo === tipo));
+            card.classList.remove('selected');
+        }
+        actualizarResumen();
+    });
+});
+
+// Event listeners para checkboxes de paquetes
+document.querySelectorAll('.paquete-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const card = this.closest('.paquete-card');
+        const id = card.dataset.id;
+        const tipo = card.dataset.tipo;
+        const precio = parseFloat(card.dataset.precio);
+        const duracion = parseInt(card.dataset.duracion);
+        const nombre = card.querySelector('.card-title').textContent;
+
+        if (this.checked) {
+            // Agregar paquete seleccionado
+            serviciosSeleccionados.push({
+                id: id,
+                tipo: tipo,
+                nombre: nombre,
+                precio: precio,
+                duracion: duracion
+            });
+            card.classList.add('selected');
+        } else {
+            // Remover paquete deseleccionado
+            serviciosSeleccionados = serviciosSeleccionados.filter(s => !(s.id === id && s.tipo === tipo));
+            card.classList.remove('selected');
+        }
+        actualizarResumen();
+    });
+});
+
+// Continuar al siguiente paso
+document.getElementById('btn-continuar').addEventListener('click', async function() {
+    if (serviciosSeleccionados.length === 0) {
+        alert('Por favor selecciona al menos un servicio o paquete');
+        return;
+    }
+
+    try {
+        const response = await fetch('{{ url_for("client.guardar_servicios") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                servicios: serviciosSeleccionados
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = '{{ url_for("client.seleccionar_fecha") }}';
+        } else {
+            alert('Error al guardar los servicios: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar los servicios');
+    }
+});
+
+// Mejorar la experiencia de click en las tarjetas
+document.querySelectorAll('.servicio-card, .paquete-card').forEach(card => {
+    card.addEventListener('click', function(e) {
+        // No activar si se hace click en el checkbox directamente
+        if (e.target.type === 'checkbox') {
+            return;
+        }
+        
+        const checkbox = this.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    });
+});
+
+// Efectos visuales para las tarjetas
+document.querySelectorAll('.servicio-card, .paquete-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        if (!this.classList.contains('selected')) {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+        }
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        if (!this.classList.contains('selected')) {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        }
+    });
+});
+</script>
+{% endblock %}
