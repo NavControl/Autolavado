@@ -1,7 +1,6 @@
 {% extends 'admin/base.html' %}
 
 {% block content %}
-<!-- encabezado de página -->
 <div class="page-head">
   <div>
     <h2 class="page-title">Dashboard del Autolavado</h2>
@@ -12,26 +11,44 @@
   </div>
 </div>
 
-<!-- métricas -->
 <section class="grid-3">
   <article class="metric">
     <div class="metric-label">Citas de hoy</div>
     <div class="metric-value">12</div>
     <div class="metric-foot success">+3 vs ayer</div>
   </article>
+
   <article class="metric">
     <div class="metric-label">Clientes activos</div>
     <div class="metric-value">48</div>
     <div class="metric-foot">últimos 30 días</div>
   </article>
+
   <article class="metric">
     <div class="metric-label">Servicios disponibles</div>
     <div class="metric-value">7</div>
     <div class="metric-foot">catálogo actual</div>
   </article>
+
+  <article class="metric">
+    <div class="metric-label">Ingresos (últimos 30 días)</div>
+    <div class="metric-value">
+      ${{ '%.2f'|format((pagos_resumen.total_30d if pagos_resumen else 0)) }}
+    </div>
+    <div class="metric-foot">pagos registrados</div>
+  </article>
+
+  <article class="metric">
+    <div class="metric-label">Pagos pendientes</div>
+    <div class="metric-value">
+      {{ pagos_resumen.pendientes if pagos_resumen else 0 }}
+    </div>
+    <div class="metric-foot">
+      <a href="{{ url_for('pagos.lista_pagos') }}" class="link">Ver pagos</a>
+    </div>
+  </article>
 </section>
 
-<!-- tabla con filtros -->
 <section class="card mt">
   <header class="card-head">
     <div class="card-title">
@@ -48,9 +65,9 @@
         <option>Cancelada</option>
       </select>
       <label class="visually-hidden" for="f-fecha">Fecha</label>
-      <input id="f-fecha" class="select-sm" type="date" />
+      <input id="f-fecha" class="select-sm" type="date">
       <label class="visually-hidden" for="f-texto">Texto</label>
-      <input id="f-texto" class="select-sm" type="text" placeholder="Cliente / placas" />
+      <input id="f-texto" class="select-sm" type="text" placeholder="Cliente / placas">
       <button class="btn-outline-sm" type="button">Aplicar</button>
     </form>
   </header>
@@ -107,12 +124,10 @@
   </footer>
 </section>
 
-<!-- estado vacío (ejemplo, escondido por ahora) -->
 <section class="empty hidden" aria-hidden="true">
   <div class="empty-ico">📅</div>
   <h3>No hay citas hoy</h3>
   <p class="muted">Programa una nueva cita para comenzar.</p>
   <a href="#" class="btn-primary-sm">Crear cita</a>
 </section>
-
 {% endblock %}

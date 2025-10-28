@@ -1,9 +1,9 @@
 from flask import render_template, redirect, url_for, request, flash, session, jsonify
-from . import servicio_bp
+from . import services_bp
 from config.db_connection import get_db_connection
 
 #Listar
-@servicio_bp.route('/')
+@services_bp.route('/')
 def servicio_inicio():
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
@@ -14,7 +14,7 @@ def servicio_inicio():
     return render_template('services/servicios.html', datos_servicios=datos_servicios)
 
 #Agregar
-@servicio_bp.route('/agregar-servicio', methods=['GET', 'POST'])
+@services_bp.route('/agregar-servicio', methods=['GET', 'POST'])
 def agregar_servicio():
     if request.method == 'POST':
         nombre = request.form.get('inpNombre')
@@ -39,7 +39,7 @@ def agregar_servicio():
     return render_template('services/agregar_servicio.html')
 
 #Editar 
-@servicio_bp.route('/editar-servicio/<int:id_servicio>', methods=["GET", "POST"])
+@services_bp.route('/editar-servicio/<int:id_servicio>', methods=["GET", "POST"])
 def editar_servicio(id_servicio):
     print(f"Ruta de editar servicio accedida - ID: {id_servicio}")
     conn = get_db_connection()
@@ -79,7 +79,7 @@ def editar_servicio(id_servicio):
     return render_template("services/editar_servicio.html", servicio=servicio) 
 
 # Eliminar 
-@servicio_bp.route('/eliminar-servicio', methods=["POST"])
+@services_bp.route('/eliminar-servicio', methods=["POST"])
 def eliminar_servicio():
     try:
         data = request.json
@@ -100,7 +100,7 @@ def eliminar_servicio():
 #==================================================================
 #Paquetes
 #==================================================================
-@servicio_bp.route('/paquetes')
+@services_bp.route('/paquetes')
 def listar_paquetes():
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
@@ -125,7 +125,7 @@ def listar_paquetes():
     return render_template('services/paquetes.html', datos_paquetes=datos_paquetes)
 
 # Vista para crear paquete (selección de servicios)
-@servicio_bp.route('/crear-paquete')
+@services_bp.route('/crear-paquete')
 def crear_paquete():
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
@@ -140,7 +140,7 @@ def crear_paquete():
     return render_template('services/crear_paquete.html', servicios=servicios)
 
 # Procesar creación de paquete
-@servicio_bp.route('/procesar-paquete', methods=['POST'])
+@services_bp.route('/procesar-paquete', methods=['POST'])
 def procesar_paquete():
     try:
         data = request.json
@@ -190,7 +190,7 @@ def procesar_paquete():
         return jsonify({"message": "ERROR", "error": str(e)}), 500
 
 # Ver detalle de paquete
-@servicio_bp.route('/paquete/<int:id_paquete>')
+@services_bp.route('/paquete/<int:id_paquete>')
 def ver_paquete(id_paquete):
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
@@ -222,7 +222,7 @@ def ver_paquete(id_paquete):
     return render_template('services/ver_paquete.html', paquete=paquete, servicios=servicios)
 
 # Editar paquete (vista)
-@servicio_bp.route('/editar-paquete/<int:id_paquete>')
+@services_bp.route('/editar-paquete/<int:id_paquete>')
 def editar_paquete(id_paquete):
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
@@ -260,7 +260,7 @@ def editar_paquete(id_paquete):
                          servicios_seleccionados=servicios_seleccionados)
 
 # Procesar edición de paquete
-@servicio_bp.route('/procesar-edicion-paquete', methods=['POST'])
+@services_bp.route('/procesar-edicion-paquete', methods=['POST'])
 def procesar_edicion_paquete():
     try:
         data = request.json
@@ -314,7 +314,7 @@ def procesar_edicion_paquete():
         return jsonify({"message": "ERROR", "error": str(e)}), 500
 
 # Eliminar paquete
-@servicio_bp.route('/eliminar-paquete', methods=['POST'])
+@services_bp.route('/eliminar-paquete', methods=['POST'])
 def eliminar_paquete():
     try:
         data = request.json
