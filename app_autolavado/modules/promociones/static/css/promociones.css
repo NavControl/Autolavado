@@ -1,0 +1,131 @@
+/* ===========================
+   ESTILO GENERAL DEL MÓDULO
+   =========================== */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #f4f6f9;
+    color: #333;
+}
+
+/* ===========================
+   NAVBAR
+   =========================== */
+.navbar {
+    background: linear-gradient(90deg, #007bff, #00a8ff);
+}
+.navbar-brand {
+    font-size: 1.3rem;
+    letter-spacing: 0.5px;
+}
+.navbar .btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+.navbar .btn:hover {
+    transform: translateY(-2px);
+}
+
+/* ===========================
+   CONTENEDOR DE TARJETAS
+   =========================== */
+.promo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+/* ===========================
+   TARJETAS DE PROMOCIÓN
+   =========================== */
+.promo-card {
+    background: #fff;
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+}
+.promo-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.promo-card .promo-header {
+    background: linear-gradient(135deg, #007bff, #00a8ff);
+    color: #fff;
+    padding: 1rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.promo-card .promo-header h5 {
+    font-size: 1.1rem;
+    margin: 0;
+}
+.promo-card .promo-body {
+    padding: 1.2rem;
+}
+.promo-card .promo-body p {
+    margin-bottom: 0.6rem;
+    font-size: 0.95rem;
+}
+.promo-card .promo-body .badge {
+    font-size: 0.85rem;
+    padding: 0.4em 0.8em;
+    border-radius: 10px;
+}
+.promo-card .promo-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-top: 1px solid #eee;
+}
+.promo-card .btn-action {
+    border: none;
+    background: transparent;
+    color: #007bff;
+    font-size: 1.1rem;
+    transition: color 0.2s ease;
+}
+.promo-card .btn-action:hover {
+    color: #0056b3;
+}
+
+/* ===========================
+   BOTÓN “NUEVA PROMOCIÓN”
+   =========================== */
+.btn-nueva {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(90deg, #00a8ff, #007bff);
+    color: white;
+    border-radius: 10px;
+    border: none;
+    padding: 0.6rem 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+.btn-nueva:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* ===========================
+   TOASTS
+   =========================== */
+.toast-container {
+    pointer-events: none;
+}
+.toast {
+    pointer-events: auto;
+    border-radius: 10px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.15);
+    animation: fadeInRight 0.6s ease;
+}
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}

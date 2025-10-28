@@ -1,0 +1,129 @@
+{% extends 'admin/base.html' %}
+{% block title %}Registrar Pago{% endblock %}
+
+{% block content %}
+<div class="container mt-5 col-md-6">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Registrar Pago</h5>
+    </div>
+
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('pagos.registrar_pago') }}" id="formPago" autocomplete="off">
+
+        <!-- Usuario -->
+        <div class="mb-3 position-relative">
+          <label for="buscar_usuario" class="form-label">Usuario</label>
+          <input 
+            type="text" 
+            id="buscar_usuario" 
+            class="form-control" 
+            placeholder="Escriba el nombre del cliente..." 
+            required
+          >
+          <input type="hidden" id="id_usuario" name="id_usuario">
+          <div 
+            id="sugerencias_usuarios" 
+            class="list-group position-absolute w-100 shadow-sm" 
+            style="z-index: 1000;"
+          ></div>
+        </div>
+
+        <!-- Tipo de consumo -->
+        <div class="mb-3">
+          <label class="form-label d-block">Tipo de consumo</label>
+          <div class="form-check form-check-inline">
+            <input 
+              class="form-check-input" 
+              type="radio" 
+              name="tipo" 
+              id="tipo_servicio" 
+              value="servicio" 
+              checked
+            >
+            <label class="form-check-label" for="tipo_servicio">Servicio</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input 
+              class="form-check-input" 
+              type="radio" 
+              name="tipo" 
+              id="tipo_paquete" 
+              value="paquete"
+            >
+            <label class="form-check-label" for="tipo_paquete">Paquete</label>
+          </div>
+        </div>
+
+        <!-- Selector -->
+        <div class="mb-3">
+          <label for="select_item" class="form-label">Seleccione</label>
+          <select id="select_item" name="id_item" class="form-select" required>
+            <option value="">Seleccione una opción...</option>
+          </select>
+          <div class="form-text">Seleccione el servicio o paquete a cobrar.</div>
+        </div>
+
+        <!-- Monto -->
+        <div class="mb-3">
+          <label for="monto" class="form-label">Monto</label>
+          <input 
+            type="number" 
+            step="0.01" 
+            id="monto" 
+            name="monto" 
+            class="form-control" 
+            readonly 
+            required
+          >
+          <div class="form-text">Se asigna automáticamente según el servicio o paquete elegido.</div>
+        </div>
+
+        <!-- Método -->
+        <div class="mb-3">
+          <label for="metodo" class="form-label">Método</label>
+          <select id="metodo" name="metodo" class="form-select" required>
+            <option value="efectivo" selected>Efectivo</option>
+            <option value="paypal">PayPal</option>
+          </select>
+        </div>
+
+        <!-- Código -->
+        <div class="mb-3">
+          <label for="codigo_referencia" class="form-label">Código de referencia</label>
+          <input 
+            type="text" 
+            id="codigo_referencia" 
+            name="codigo_referencia" 
+            class="form-control" 
+            placeholder="(opcional)"
+          >
+        </div>
+
+        <!-- Descripción -->
+        <div class="mb-3">
+          <label for="descripcion" class="form-label">Descripción</label>
+          <textarea 
+            id="descripcion" 
+            name="descripcion" 
+            class="form-control" 
+            rows="3" 
+            placeholder="(opcional)"
+          ></textarea>
+        </div>
+
+        <!-- Botones -->
+        <div class="text-end">
+          <button type="submit" class="btn btn-primary">Registrar</button>
+          <a href="{{ url_for('pagos.lista_pagos') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('pagos.static', filename='js/pagos.js') }}"></script>
+{% endblock %}

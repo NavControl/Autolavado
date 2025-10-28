@@ -1,0 +1,576 @@
+{% extends "client/base.html" %}
+
+{% block title %}Mis Vehículos - Autolavado{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<style>
+    .vehiculos-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+    
+    .vehiculo-card {
+        background: var(--bs-white);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .vehiculo-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .vehiculo-card:active {
+        transform: translateY(-2px) scale(0.98);
+    }
+    
+    /* Overlay de eliminación */
+    .delete-overlay {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 30px;
+        height: 30px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.3s ease;
+        z-index: 10;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+    
+    .vehiculo-card:hover .delete-overlay {
+        opacity: 1;
+        transform: scale(1);
+    }
+    
+    .delete-overlay:hover {
+        background: #c82333;
+        transform: scale(1.1) !important;
+    }
+    
+    .vehiculo-header {
+        background: var(--bs-primary);
+        color: var(--bs-white);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    
+    .vehiculo-body {
+        padding: 1.5rem;
+    }
+    
+    /* Botones modernos - mismos estilos que la tabla de clientes */
+    .btn-modern {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid;
+        cursor: pointer;
+    }
+    
+
+    
+     .btn-modern-primary {
+        background: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: var(--bs-white);
+    }
+    
+    .btn-modern-primary:hover {
+        background: var(--bs-primary-dark);
+        border-color: var(--bs-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+        color: var(--bs-white);
+    }
+    
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--bs-secondary);
+        background: var(--bs-light);
+        border-radius: 12px;
+        border: 1px dashed var(--bs-border-color);
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--bs-secondary);
+        opacity: 0.7;
+    }
+    
+    .vehiculo-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: var(--bs-primary);
+        opacity: 0.8;
+    }
+    
+    .badge-vehiculo {
+        background: var(--bs-success);
+        color: var(--bs-white);
+        border-radius: 12px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .vehiculo-info p {
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .vehiculo-info i {
+        width: 1.25rem;
+        margin-right: 0.5rem;
+        color: var(--bs-primary);
+    }
+    
+    .modal-content {
+        border-radius: 12px;
+        border: 1px solid var(--bs-border-color);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .modal-header {
+        background: var(--bs-light);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .modal-title {
+        font-weight: 600;
+        color: var(--bs-heading-color);
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid var(--bs-border-color);
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: var(--bs-body-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.1);
+        outline: none;
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .vehiculos-container {
+            padding: 1rem 0.5rem;
+        }
+        
+        .vehiculo-header,
+        .vehiculo-body {
+            padding: 1.25rem 1rem;
+        }
+        
+        .d-flex.justify-content-between.align-items-center.mb-4 {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .btn-modern {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .empty-state {
+            padding: 2rem 1rem;
+        }
+        
+        .delete-overlay {
+            width: 28px;
+            height: 28px;
+            font-size: 12px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .delete-overlay {
+            opacity: 1; /* Mostrar siempre en móvil para mejor usabilidad */
+            transform: scale(1);
+        }
+    }
+    
+    /* Icon spacing */
+    .fa-plus,
+    .fa-edit,
+    .fa-trash,
+    .fa-save,
+    .fa-tag,
+    .fa-palette,
+    .fa-calendar-alt {
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vehiculos-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Mis Vehículos</h1>
+            <p class="text-muted mb-0">Gestiona tus vehículos registrados en el sistema</p>
+        </div>
+        <button type="button" class="btn-modern btn-modern-success" data-bs-toggle="modal" data-bs-target="#modalVehiculo">
+            <i class="fas fa-plus"></i>Agregar Vehículo
+        </button>
+    </div>
+
+    <!-- Lista de vehículos -->
+    <div class="row">
+        {% if vehiculos %}
+            {% for vehiculo in vehiculos %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="vehiculo-card" 
+                     data-vehiculo-id="{{ vehiculo.id_vehiculo }}"
+                     onclick="editarVehiculo({{ vehiculo.id_vehiculo }})">
+                    
+                    <!-- Botón de eliminar (solo visible en hover) -->
+                    <div class="delete-overlay" onclick="event.stopPropagation(); eliminarVehiculo({{ vehiculo.id_vehiculo }})">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    
+                    <div class="vehiculo-header">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="card-title mb-0">{{ vehiculo.marca }} {{ vehiculo.modelo }}</h5>
+                            <span class="badge badge-vehiculo">Activo</span>
+                        </div>
+                    </div>
+                    <div class="vehiculo-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-car vehiculo-icon"></i>
+                        </div>
+                        <div class="vehiculo-info">
+                            <p class="card-text">
+                                <i class="fas fa-tag"></i>
+                                <strong>Placas:</strong> {{ vehiculo.placas }}
+                            </p>
+                            <p class="card-text">
+                                <i class="fas fa-palette"></i>
+                                <strong>Color:</strong> {{ vehiculo.color }}
+                            </p>
+                            <p class="card-text">
+                                <i class="fas fa-calendar-alt"></i>
+                                <strong>Año:</strong> {{ vehiculo.anio }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <i class="fas fa-car"></i>
+                    <h3>No hay vehículos registrados</h3>
+                    <p class="mb-4">Agrega tu primer vehículo para agendar citas más rápido.</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalVehiculo">
+                        <i class="fas fa-plus"></i>Agregar Primer Vehículo
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para agregar/editar vehículo -->
+<div class="modal fade" id="modalVehiculo" tabindex="-1" aria-labelledby="modalVehiculoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalVehiculoLabel">Agregar Vehículo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formVehiculo">
+                <div class="modal-body">
+                    <input type="hidden" id="vehiculo_id" name="vehiculo_id">
+                    <div class="mb-3">
+                        <label for="marca" class="form-label">Marca *</label>
+                        <input type="text" class="form-control" id="marca" name="marca" required 
+                               placeholder="Ej: Toyota, Honda, Nissan...">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modelo" class="form-label">Modelo *</label>
+                        <input type="text" class="form-control" id="modelo" name="modelo" required 
+                               placeholder="Ej: Corolla, Civic, Sentra...">
+                    </div>
+                    <div class="mb-3">
+                        <label for="placas" class="form-label">Placas *</label>
+                        <input type="text" class="form-control" id="placas" name="placas" required 
+                               placeholder="Ej: ABC-123" style="text-transform: uppercase;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="color" class="form-label">Color *</label>
+                        <input type="text" class="form-control" id="color" name="color" required 
+                               placeholder="Ej: Rojo, Azul, Negro...">
+                    </div>
+                    <div class="mb-3">
+                        <label for="anio" class="form-label">Año *</label>
+                        <input type="number" class="form-control" id="anio" name="anio" 
+                               min="1990" max="2024" required 
+                               placeholder="Ej: 2020">
+                        <div class="form-text">El año debe estar entre 1990 y 2024</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>Guardar Vehículo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Función para editar vehículo (al hacer clic en la tarjeta)
+    function editarVehiculo(idVehiculo) {
+        // Buscar el vehículo en la lista y abrir el modal en modo edición
+        const vehiculoCard = document.querySelector(`[data-vehiculo-id="${idVehiculo}"]`);
+        if (vehiculoCard) {
+            // Simular clic en el botón de editar que ya existe en el código original
+            const editButton = vehiculoCard.querySelector('[data-bs-toggle="modal"]');
+            if (editButton) {
+                editButton.click();
+            } else {
+                // Si no existe el botón, abrir el modal manualmente
+                $('#vehiculo_id').val(idVehiculo);
+                $('#modalVehiculoLabel').text('Editar Vehículo');
+                
+                // Obtener datos del vehículo (aquí necesitarías una forma de obtener los datos)
+                // Por ahora, usaremos el método existente del código original
+                const modal = new bootstrap.Modal(document.getElementById('modalVehiculo'));
+                modal.show();
+            }
+        }
+    }
+
+    // Función para eliminar vehículo (al hacer clic en la X)
+    function eliminarVehiculo(idVehiculo) {
+        // Detener la propagación del evento para evitar que se active el clic de la tarjeta
+        event.stopPropagation();
+        
+        const vehiculoCard = document.querySelector(`[data-vehiculo-id="${idVehiculo}"]`);
+        const vehiculoInfo = vehiculoCard ? vehiculoCard.querySelector('.card-title').textContent : 'este vehículo';
+        
+        // Usar el método de confirmación existente en el código
+        if (typeof $.confirm !== 'undefined') {
+            $.confirm({
+                title: 'Confirmar Eliminación',
+                content: `¿Estás seguro de que deseas eliminar el vehículo: <strong>${vehiculoInfo}</strong>?`,
+                type: 'red',
+                buttons: {
+                    confirm: {
+                        text: 'Sí, eliminar',
+                        btnClass: 'btn-danger',
+                        action: function() {
+                            $.ajax({
+                                url: `/client/api/vehiculos/${idVehiculo}`,
+                                type: 'DELETE',
+                                success: function(response) {
+                                    if (response.success) {
+                                        showAlert('¡Éxito!', response.message, 'success');
+                                        setTimeout(() => {
+                                            location.reload();
+                                        }, 1500);
+                                    } else {
+                                        showAlert('Error', response.message, 'error');
+                                    }
+                                },
+                                error: function(xhr) {
+                                    const response = xhr.responseJSON;
+                                    showAlert('Error', response ? response.message : 'Error de conexión', 'error');
+                                }
+                            });
+                        }
+                    },
+                    cancel: {
+                        text: 'Cancelar',
+                        action: function() {}
+                    }
+                }
+            });
+        } else {
+            // Fallback si no está disponible jQuery confirm
+            if (confirm(`¿Estás seguro de que deseas eliminar el vehículo: ${vehiculoInfo}?`)) {
+                $.ajax({
+                    url: `/client/api/vehiculos/${idVehiculo}`,
+                    type: 'DELETE',
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Vehículo eliminado correctamente');
+                            location.reload();
+                        } else {
+                            alert('Error al eliminar el vehículo: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        const response = xhr.responseJSON;
+                        alert('Error al eliminar el vehículo: ' + (response ? response.message : 'Error de conexión'));
+                    }
+                });
+            }
+        }
+    }
+
+    $(document).ready(function() {
+        let currentVehiculoId = null;
+
+        // Modal para agregar vehículo: resetear formulario
+        $('#modalVehiculo').on('show.bs.modal', function (event) {
+            const button = $(event.relatedTarget); // Botón que disparó el modal
+            if (button.data('id')) {
+                // Es edición
+                currentVehiculoId = button.data('id');
+                $('#vehiculo_id').val(currentVehiculoId);
+                $('#marca').val(button.data('marca'));
+                $('#modelo').val(button.data('modelo'));
+                $('#placas').val(button.data('placas'));
+                $('#color').val(button.data('color'));
+                $('#anio').val(button.data('anio'));
+                $('#modalVehiculoLabel').text('Editar Vehículo');
+            } else {
+                // Es nuevo
+                currentVehiculoId = null;
+                $('#formVehiculo')[0].reset();
+                $('#modalVehiculoLabel').text('Agregar Vehículo');
+            }
+        });
+
+        // Envío del formulario para guardar vehículo
+        $('#formVehiculo').on('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                marca: $('#marca').val(),
+                modelo: $('#modelo').val(),
+                placas: $('#placas').val().toUpperCase(),
+                color: $('#color').val(),
+                anio: $('#anio').val()
+            };
+
+            // Validación básica
+            if (!formData.marca || !formData.modelo || !formData.placas || !formData.color || !formData.anio) {
+                alert('Por favor, completa todos los campos obligatorios.');
+                return;
+            }
+
+            const url = currentVehiculoId ? 
+                `/client/api/vehiculos/${currentVehiculoId}` : 
+                '/client/api/vehiculos';
+            const method = currentVehiculoId ? 'PUT' : 'POST';
+
+            $.ajax({
+                url: url,
+                type: method,
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    if (response.success) {
+                        $('#modalVehiculo').modal('hide');
+                        // Mostrar mensaje de éxito
+                        showAlert('¡Éxito!', response.message, 'success');
+                        // Recargar la página después de un breve delay
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showAlert('Error', response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    const response = xhr.responseJSON;
+                    showAlert('Error', response ? response.message : 'Error de conexión', 'error');
+                }
+            });
+        });
+
+        // Efectos adicionales para mejorar la experiencia de usuario
+        document.addEventListener('DOMContentLoaded', function() {
+            // Agregar efecto de pulso al hacer hover sobre la X
+            const deleteButtons = document.querySelectorAll('.delete-overlay');
+            deleteButtons.forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.1)';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+        });
+
+        // Función para mostrar alertas
+        function showAlert(title, message, type) {
+            if (typeof $.alert !== 'undefined') {
+                $.alert({
+                    title: title,
+                    content: message,
+                    type: type === 'error' ? 'red' : 'green',
+                    buttons: {
+                        ok: {
+                            text: 'Aceptar',
+                            btnClass: 'btn-primary'
+                        }
+                    }
+                });
+            } else {
+                alert(`${title}: ${message}`);
+            }
+        }
+    });
+</script>
+{% endblock %}

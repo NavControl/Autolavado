@@ -1,0 +1,79 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('users.static', filename='css/usuarios.css') }}">
+
+<div class="container-fluid px-4 py-3">
+  <div class="card shadow-sm border-0 rounded-3">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa fa-user-plus me-2"></i>Agregar Nuevo Usuario</h5>
+      <a href="{{ url_for('users.lista_usuarios') }}" class="btn btn-light btn-sm">
+        <i class="fa fa-arrow-left me-2"></i>Volver
+      </a>
+    </div>
+
+    <div class="card-body">
+      <form action="{{ url_for('users.guardar_usuario') }}" method="POST" class="needs-validation" novalidate>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="inpUsuario" class="form-label fw-semibold">Usuario</label>
+            <input type="text" id="inpUsuario" name="inpUsuario" class="form-control" placeholder="Nombre de usuario" required>
+            <div class="invalid-feedback">Campo obligatorio.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="inpNombre" class="form-label fw-semibold">Nombre completo</label>
+            <input type="text" id="inpNombre" name="inpNombre" class="form-control" placeholder="Ejemplo: Juan Pérez" required>
+            <div class="invalid-feedback">Campo obligatorio.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="inpCorreo" class="form-label fw-semibold">Correo electrónico</label>
+            <input type="email" id="inpCorreo" name="inpCorreo" class="form-control" placeholder="correo@ejemplo.com" required>
+            <div class="invalid-feedback">Introduce un correo válido.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="inpTelefono" class="form-label fw-semibold">Teléfono</label>
+            <input type="text" id="inpTelefono" name="inpTelefono" class="form-control" placeholder="Ejemplo: 7221234567" required pattern="[0-9]{10}">
+            <div class="invalid-feedback">Introduce un número válido de 10 dígitos.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="slcRol" class="form-label fw-semibold">Rol</label>
+            <select id="slcRol" name="slcRol" class="form-select" required>
+              <option value="" selected disabled>Seleccionar rol...</option>
+              {% for rol in roles %}
+              <option value="{{ rol }}">{{ rol }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Selecciona un rol.</div>
+          </div>
+
+          <div class="col-12 mt-3 text-end">
+            <button type="submit" class="btn btn-success px-4">
+              <i class="fa fa-save me-2"></i>Guardar Usuario
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Validación de formulario Bootstrap
+(() => {
+  'use strict';
+  const forms = document.querySelectorAll('.needs-validation');
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+})();
+</script>
+{% endblock %}

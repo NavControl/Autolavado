@@ -1,0 +1,337 @@
+{% extends 'client/base.html' %}
+
+{% block title %}Reprogramar Cita - Autolavado{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<style>
+    .reprogramar-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .cita-info-card {
+        border-left: 4px solid #3498db;
+    }
+    
+    .horario-btn {
+        transition: all 0.3s ease;
+    }
+    
+    .horario-btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #27ae60, #219653);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reprogramar-container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Reprogramar Cita
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la cita actual -->
+                    <div class="card cita-info-card mb-4">
+                        <div class="card-body">
+                            <h5 class="text-dark">
+                                <i class="fas fa-info-circle me-2"></i>Información de la cita actual
+                            </h5>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <strong class="text-dark">Servicio:</strong> 
+                                    <span id="cita-servicio" class="text-dark">{{ cita_actual.servicio_nombre }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong class="text-dark">Vehículo:</strong> 
+                                    <span id="cita-vehiculo" class="text-dark">
+                                        {{ cita_actual.marca }} {{ cita_actual.modelo }} ({{ cita_actual.placas }})
+                                    </span>
+                                </div>
+                            </div>
+<div class="row mt-2">
+    <div class="col-md-6">
+        <strong class="text-dark">Fecha actual:</strong> 
+        <span id="cita-fecha-actual" class="text-dark">
+            {{ cita_actual.fecha_actual or 'No programada' }}
+        </span>
+    </div>
+    <div class="col-md-6">
+        <strong class="text-dark">Hora actual:</strong> 
+        <span id="cita-hora-actual" class="text-dark">
+            {{ cita_actual.hora_actual or 'No programada' }}
+        </span>
+    </div>
+</div>
+                        </div>
+                    </div>
+
+                    <!-- Selección de nueva fecha y hora -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0 text-dark">
+                                <i class="fas fa-calendar-plus me-2"></i>Seleccionar Nueva Fecha y Hora
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="nueva-fecha" class="form-label text-dark">
+                                            <i class="fas fa-calendar-day me-2"></i>Selecciona una nueva fecha
+                                        </label>
+                                        <input type="date" class="form-control" id="nueva-fecha" 
+                                               min="{{ min_date }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-dark">
+                                            <i class="fas fa-clock me-2"></i>Horarios disponibles
+                                        </label>
+                                        <div id="horarios-container" class="mt-2">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                Selecciona una fecha para ver los horarios disponibles
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('client.citas') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a Mis Citas
+                        </a>
+                        <button id="btn-confirmar-reprogramacion" class="btn btn-success" disabled>
+                            <i class="fas fa-check me-2"></i>Confirmar Reprogramación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>Confirmar Reprogramación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres reprogramar tu cita para el <strong id="modal-fecha"></strong> a las <strong id="modal-hora"></strong>?</p>
+                <p class="text-muted small">La fecha y hora anteriores serán reemplazadas por la nueva programación.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btn-procesar-reprogramacion">
+                    <i class="fas fa-check me-2"></i>Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('nueva-fecha');
+    const horariosContainer = document.getElementById('horarios-container');
+    const btnConfirmar = document.getElementById('btn-confirmar-reprogramacion');
+    const btnProcesar = document.getElementById('btn-procesar-reprogramacion');
+    const modalConfirmacion = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+    
+    let fechaSeleccionada = null;
+    let horaSeleccionada = null;
+    const citaId = {{ cita_actual.id_cita }};
+
+    // Establecer fecha mínima como hoy
+    const today = new Date().toISOString().split('T')[0];
+    fechaInput.setAttribute('min', today);
+
+    // Cargar horarios cuando se selecciona una fecha
+fechaInput.addEventListener('change', async function() {
+    const fecha = this.value;
+    if (!fecha) return;
+
+    try {
+        horariosContainer.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 text-muted">Buscando horarios disponibles...</p>
+            </div>
+        `;
+
+        // Incluir el ID de la cita actual para excluirla de la verificación
+        const response = await fetch(`{{ url_for("client.api_obtener_horarios") }}?fecha=${fecha}&excluir_cita_id=${citaId}`);
+        const data = await response.json();
+
+        if (data.success && data.horarios && data.horarios.length > 0) {
+            mostrarHorariosDisponibles(data.horarios, fecha);
+            fechaSeleccionada = fecha;
+        } else {
+            horariosContainer.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${data.message || 'No hay horarios disponibles para esta fecha'}
+                </div>
+            `;
+            fechaSeleccionada = null;
+            horaSeleccionada = null;
+            btnConfirmar.disabled = true;
+        }
+    } catch (error) {
+        console.error('Error al cargar horarios:', error);
+        horariosContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle me-2"></i>
+                Error al cargar horarios disponibles
+            </div>
+        `;
+    }
+});
+
+    function mostrarHorariosDisponibles(horarios, fecha) {
+        let html = `
+            <div class="row g-2">
+        `;
+
+        horarios.forEach(horario => {
+            html += `
+                <div class="col-6 col-md-4">
+                    <button type="button" class="btn btn-outline-primary w-100 horario-btn" data-hora="${horario}">
+                        ${horario}
+                    </button>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        horariosContainer.innerHTML = html;
+
+        // Agregar event listeners a los botones de hora
+        document.querySelectorAll('.horario-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Quitar selección anterior
+                document.querySelectorAll('.horario-btn').forEach(btn => {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                });
+                // Seleccionar nueva hora
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+                horaSeleccionada = this.dataset.hora;
+                btnConfirmar.disabled = false;
+            });
+        });
+    }
+
+    // Confirmar reprogramación
+    btnConfirmar.addEventListener('click', function() {
+        if (!fechaSeleccionada || !horaSeleccionada) {
+            alert('Por favor selecciona una fecha y hora');
+            return;
+        }
+
+        // Mostrar modal de confirmación
+        document.getElementById('modal-fecha').textContent = formatFecha(fechaSeleccionada);
+        document.getElementById('modal-hora').textContent = horaSeleccionada;
+        modalConfirmacion.show();
+    });
+
+    // Procesar reprogramación
+    btnProcesar.addEventListener('click', async function() {
+        btnProcesar.disabled = true;
+        btnProcesar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+
+        try {
+            const response = await fetch('{{ url_for("client.procesar_reprogramacion") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cita_id: citaId,
+                    nueva_fecha: fechaSeleccionada,
+                    nueva_hora: horaSeleccionada
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                modalConfirmacion.hide();
+                showAlert('success', 'Cita reprogramada correctamente', function() {
+                    window.location.href = '{{ url_for("client.citas") }}';
+                });
+            } else {
+                modalConfirmacion.hide();
+                showAlert('error', 'Error: ' + data.message);
+                btnProcesar.disabled = false;
+                btnProcesar.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            modalConfirmacion.hide();
+            showAlert('error', 'Error al reprogramar la cita');
+            btnProcesar.disabled = false;
+            btnProcesar.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar';
+        }
+    });
+
+    function formatFecha(fechaStr) {
+        const fecha = new Date(fechaStr);
+        return fecha.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    }
+
+    function showAlert(type, message, callback = null) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('.card-body').firstChild);
+        
+        if (type === 'success' && callback) {
+            setTimeout(callback, 2000);
+        }
+    }
+});
+</script>
+{% endblock %}

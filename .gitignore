@@ -1,0 +1,17 @@
+# Ignorar entorno virtual
+.venv/
+venv/
+
+# Ignorar cachés y compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar logs y temporales
+*.log
+*.tmp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db

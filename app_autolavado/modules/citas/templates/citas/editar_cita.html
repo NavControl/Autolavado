@@ -1,0 +1,202 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-edit me-2"></i>Editar Cita #{{ cita.id_cita }}</h2>
+        <a href="/citas/admin/citas" class="btn btn-secondary">
+            <i class="fa fa-arrow-left me-2"></i>Volver a Citas
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Información de la Cita</h5>
+                </div>
+                <div class="card-body">
+                    <form id="form-editar-cita">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fecha" class="form-label">Fecha</label>
+                                <input type="date" class="form-control" id="fecha" value="{{ cita.fecha }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="hora" class="form-label">Hora</label>
+                                <input type="time" class="form-control" id="hora" value="{{ cita.hora }}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="estado" class="form-label">Estado</label>
+                                <select class="form-select" id="estado" required>
+                                    <option value="pendiente" {% if cita.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                    <option value="confirmada" {% if cita.estado == 'confirmada' %}selected{% endif %}>Confirmada</option>
+                                    <option value="en_proceso" {% if cita.estado == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                                    <option value="completada" {% if cita.estado == 'completada' %}selected{% endif %}>Completada</option>
+                                    <option value="cancelada" {% if cita.estado == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="total" class="form-label">Total</label>
+                                <input type="number" step="0.01" class="form-control" id="total" value="{{ cita.total }}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notas" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notas" rows="3">{{ cita.notas or '' }}</textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Servicios de la Cita</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Servicio</th>
+                                    <th>Tipo</th>
+                                    <th>Precio</th>
+                                    <th>Duración</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for servicio in servicios_cita %}
+                                <tr>
+                                    <td>{{ servicio.nombre }}</td>
+                                    <td><span class="badge bg-info">{{ servicio.tipo }}</span></td>
+                                    <td>${{ servicio.precio }}</td>
+                                    <td>{{ servicio.duracion }} min</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarServicio({{ servicio.id_cita_servicio }})">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Información del Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Nombre:</strong> {{ cita.nombre_cliente }}</p>
+                    <p><strong>Vehículo:</strong> {{ cita.marca }} {{ cita.modelo }}</p>
+                    <p><strong>Placas:</strong> {{ cita.placas }}</p>
+                    <p><strong>Color:</strong> {{ cita.color }}</p>
+                    <p><strong>Año:</strong> {{ cita.anio }}</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Acciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" form="form-editar-cita" class="btn btn-primary">
+                            <i class="fa fa-save me-2"></i>Guardar Cambios
+                        </button>
+                        <button class="btn btn-warning" onclick="enviarRecordatorio({{ cita.id_cita }})">
+                            <i class="fa fa-bell me-2"></i>Enviar Recordatorio
+                        </button>
+                        <button class="btn btn-danger" onclick="cancelarCita({{ cita.id_cita }})">
+                            <i class="fa fa-times me-2"></i>Cancelar Cita
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-editar-cita');
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const datos = {
+            fecha: document.getElementById('fecha').value,
+            hora: document.getElementById('hora').value,
+            estado: document.getElementById('estado').value,
+            total: document.getElementById('total').value,
+            notas: document.getElementById('notas').value
+        };
+
+        try {
+            const response = await fetch('/citas/admin/actualizar-cita/{{ cita.id_cita }}', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(datos)
+            });
+
+            const data = await response.json();
+            
+            if (data.message === "OK") {
+                alert('Cita actualizada correctamente');
+                window.location.reload();
+            } else {
+                alert('Error al actualizar la cita: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al actualizar la cita');
+        }
+    });
+});
+
+async function eliminarServicio(idServicioCita) {
+    if (!confirm('¿Estás seguro de eliminar este servicio de la cita?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/citas/admin/eliminar-servicio-cita/${idServicioCita}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+        
+        if (data.message === "OK") {
+            alert('Servicio eliminado correctamente');
+            window.location.reload();
+        } else {
+            alert('Error al eliminar el servicio: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al eliminar el servicio');
+    }
+}
+
+function enviarRecordatorio(idCita) {
+    alert('Funcionalidad de recordatorio en desarrollo');
+}
+
+function cancelarCita(idCita) {
+    if (confirm('¿Estás seguro de cancelar esta cita?')) {
+        // Cambiar estado a cancelada
+        document.getElementById('estado').value = 'cancelada';
+        document.getElementById('form-editar-cita').dispatchEvent(new Event('submit'));
+    }
+}
+</script>
+{% endblock %}

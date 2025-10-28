@@ -1,0 +1,96 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('users.static', filename='css/usuarios.css') }}">
+
+<div class="container-fluid px-4 py-3">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fa fa-users me-2"></i>Gestión de Usuarios</h5>
+            <a href="{{ url_for('users.agregar_usuario') }}" class="btn btn-light btn-sm">
+                <i class="fa fa-plus-circle me-2"></i>Agregar Usuario
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="fw-semibold text-secondary">
+                    Total: {{ datos_usuarios|length }} usuario{{ 's' if datos_usuarios|length != 1 else '' }}
+                </span>
+                <div class="input-group" style="max-width: 250px;">
+                    <span class="input-group-text"><i class="fa fa-search"></i></span>
+                    <input type="text" id="search-input" class="form-control" placeholder="Buscar usuario...">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle text-center" id="users-table">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>No.</th>
+                            <th>Usuario</th>
+                            <th>Nombre completo</th>
+                            <th>Correo</th>
+                            <th>Teléfono</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        {% for u in datos_usuarios %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td class="fw-semibold text-primary">{{ u.username }}</td>
+                            <td>{{ u.nombre_completo }}</td>
+                            <td>{{ u.correo }}</td>
+                            <td>{{ u.telefono }}</td>
+                            <td>
+                                <span class="badge {% if u.rol == 'Administrador' %}bg-danger{% elif u.rol == 'Recepcionista' %}bg-success{% elif u.rol == 'Lavador' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ u.rol }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-danger btn-sm" onclick="eliminarUsuario('{{ u.id_usuario }}')" title="Eliminar">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-muted py-4">
+                                <i class="fa fa-user-slash fa-lg mb-2 d-block"></i>
+                                No hay usuarios registrados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    const tableRows = document.querySelectorAll('#users-tbody tr');
+    searchInput.addEventListener('input', () => {
+        const term = searchInput.value.toLowerCase().trim();
+        tableRows.forEach(row => {
+            const visible = row.textContent.toLowerCase().includes(term);
+            row.style.display = visible ? '' : 'none';
+        });
+    });
+});
+
+function eliminarUsuario(id) {
+    if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
+    fetch(`/usuarios/eliminar/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || "Usuario eliminado");
+            location.reload();
+        })
+        .catch(() => alert("Error al eliminar usuario"));
+}
+</script>
+{% endblock %}

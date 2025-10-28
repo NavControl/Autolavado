@@ -1,0 +1,809 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="table-container">
+    <!-- Header de tabla -->
+    <div class="table-header">
+        <div class="table-title">
+            <h2>
+                <i class="fas fa-concierge-bell me-2"></i>Gestión de Servicios
+            </h2>
+            <span class="table-count">{{ datos_servicios|length }} servicios</span>
+        </div>
+        <div class="table-actions">
+            <div class="table-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Buscar servicios...">
+            </div>
+            <a href="/services/agregar-servicio" class="btn-modern btn-modern-success">
+                <i class="fas fa-plus-circle"></i>Agregar Servicio
+            </a>
+        </div>
+    </div>
+
+    <!-- Mostrar mensajes flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show mb-4" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Tabla de servicios -->
+    <div class="table-responsive">
+        <table class="modern-table" id="services-table">
+            <thead>
+                <tr>
+                    <th class="col-number">#</th>
+                    <th>Servicio</th>
+                    <th>Descripción</th>
+                    <th>Precio</th>
+                    <th>Duración</th>
+                    <th>Estado</th>
+                    <th class="col-actions">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="services-tbody">
+                {% for servicio in datos_servicios %}
+                <tr class="service-row">
+                    <td class="col-number">{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="service-icon">
+                                <i class="fas fa-concierge-bell"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="service-name">{{ servicio.nombre }}</div>
+                                <div class="service-id text-muted small">
+                                    ID: {{ servicio.id_servicio }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="service-description">
+                            {{ servicio.descripcion or 'Sin descripción' }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="price-info">
+                            <span class="price-amount">${{ servicio.precio }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="duration-info">
+                            <span class="badge badge-primary">
+                                <i class="fas fa-clock me-1"></i>{{ servicio.duracion }} min
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if servicio.activo %}
+                        <span class="badge badge-success">
+                            <i class="fas fa-circle me-1"></i>Activo
+                        </span>
+                        {% else %}
+                        <span class="badge badge-secondary">
+                            <i class="fas fa-circle me-1"></i>Inactivo
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="col-actions">
+                        <div class="action-buttons">
+                            <a href="/services/editar-servicio/{{ servicio.id_servicio }}" 
+                               class="btn-action btn-action-edit" 
+                               title="Editar servicio">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn-action btn-action-delete delete-service-btn" 
+                                    data-id="{{ servicio.id_servicio }}"
+                                    data-name="{{ servicio.nombre }}"
+                                    title="Eliminar servicio">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr id="no-results-row">
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-concierge-bell"></i>
+                            </div>
+                            <h4>No hay servicios registrados</h4>
+                            <p>Comienza agregando el primer servicio al sistema.</p>
+                            <a href="/services/agregar-servicio" class="btn-modern btn-modern-success">
+                                <i class="fas fa-plus-circle"></i>Agregar Primer Servicio
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar servicio -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar el servicio "<strong id="serviceNameToDelete"></strong>"?</p>
+                <p class="text-muted small">Esta acción no se puede deshacer y puede afectar las citas futuras.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i>Eliminar Servicio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const servicesTbody = document.getElementById('services-tbody');
+    const noResultsRow = document.getElementById('no-results-row');
+    const tableCount = document.querySelector('.table-count');
+    const originalCount = {{ datos_servicios|length }};
+    let currentServiceId = null;
+    let currentServiceName = null;
+
+    // Función para filtrar servicios
+    function filterServices() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const rows = servicesTbody.querySelectorAll('.service-row');
+        let visibleCount = 0;
+        
+        // Ocultar la fila de "no hay servicios" inicialmente
+        if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+        
+        // Si no hay término de búsqueda, mostrar todas las filas
+        if (searchTerm === '') {
+            rows.forEach(row => {
+                row.style.display = '';
+                visibleCount++;
+                removeHighlights(row);
+            });
+            
+            // Mostrar la fila de "no hay servicios" si no hay servicios
+            if (visibleCount === 0 && noResultsRow) {
+                noResultsRow.style.display = '';
+            }
+            
+            tableCount.textContent = originalCount + ' servicios';
+            return;
+        }
+        
+        // Filtrar filas según el término de búsqueda
+        rows.forEach(row => {
+            const nombre = row.cells[1].textContent.toLowerCase();
+            const descripcion = row.cells[2].textContent.toLowerCase();
+            const precio = row.cells[3].textContent.toLowerCase();
+            const duracion = row.cells[4].textContent.toLowerCase();
+            
+            // Mostrar fila si coincide con el término de búsqueda
+            if (nombre.includes(searchTerm) || 
+                descripcion.includes(searchTerm) || 
+                precio.includes(searchTerm) || 
+                duracion.includes(searchTerm)) {
+                row.style.display = '';
+                visibleCount++;
+                
+                // Resaltar el término buscado
+                highlightSearchTerm(row, searchTerm);
+            } else {
+                row.style.display = 'none';
+                removeHighlights(row);
+            }
+        });
+        
+        // Mostrar mensaje si no hay resultados
+        if (visibleCount === 0) {
+            const existingNoResults = servicesTbody.querySelector('.no-results-state');
+            if (existingNoResults) {
+                existingNoResults.remove();
+            }
+            
+            const newNoResultsRow = document.createElement('tr');
+            newNoResultsRow.className = 'no-results-state-row';
+            newNoResultsRow.innerHTML = `
+                <td colspan="7">
+                    <div class="no-results-state">
+                        <i class="fas fa-search no-results-icon"></i>
+                        <h4>No se encontraron servicios</h4>
+                        <p class="text-muted mb-3">No hay resultados que coincidan con "${searchTerm}"</p>
+                        <button type="button" class="btn-modern btn-modern-primary" onclick="clearSearch()">
+                            <i class="fas fa-times"></i>Limpiar búsqueda
+                        </button>
+                    </div>
+                </td>
+            `;
+            servicesTbody.appendChild(newNoResultsRow);
+        } else {
+            // Remover mensaje de no resultados si existe
+            const noResultsRow = servicesTbody.querySelector('.no-results-state-row');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+        
+        // Actualizar contador
+        tableCount.textContent = visibleCount + (searchTerm ? ' servicios encontrados' : ' servicios');
+    }
+    
+    // Función para resaltar términos de búsqueda
+    function highlightSearchTerm(row, term) {
+        removeHighlights(row);
+        
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+            if (cell.classList.contains('col-number') || cell.classList.contains('col-actions')) return;
+            
+            const originalHTML = cell.innerHTML;
+            const text = cell.textContent;
+            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            const newHTML = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+            
+            if (newHTML !== text) {
+                // Preservar la estructura HTML original pero reemplazar el texto
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = originalHTML;
+                
+                function replaceTextInNode(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const newText = node.textContent.replace(regex, '<mark class="search-highlight">$1</mark>');
+                        if (newText !== node.textContent) {
+                            const newSpan = document.createElement('span');
+                            newSpan.innerHTML = newText;
+                            node.parentNode.replaceChild(newSpan, node);
+                        }
+                    } else {
+                        node.childNodes.forEach(child => replaceTextInNode(child));
+                    }
+                }
+                
+                replaceTextInNode(tempDiv);
+                cell.innerHTML = tempDiv.innerHTML;
+            }
+        });
+    }
+    
+    // Función para remover resaltados
+    function removeHighlights(row) {
+        const highlights = row.querySelectorAll('mark.search-highlight');
+        highlights.forEach(highlight => {
+            const parent = highlight.parentNode;
+            while (highlight.firstChild) {
+                parent.insertBefore(highlight.firstChild, highlight);
+            }
+            parent.removeChild(highlight);
+            parent.normalize();
+        });
+    }
+    
+    // Función global para limpiar búsqueda
+    window.clearSearch = function() {
+        searchInput.value = '';
+        filterServices();
+        searchInput.focus();
+    };
+    
+    // Eventos de búsqueda
+    searchInput.addEventListener('input', filterServices);
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            clearSearch();
+        }
+    });
+    
+    // Eliminar servicio
+    document.querySelectorAll('.delete-service-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            currentServiceId = this.dataset.id;
+            currentServiceName = this.dataset.name;
+            
+            // Actualizar mensaje del modal
+            document.getElementById('serviceNameToDelete').textContent = currentServiceName;
+            
+            const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+            modal.show();
+        });
+    });
+    
+    // Confirmar eliminación
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (!currentServiceId) return;
+        
+        // Aquí puedes implementar la llamada AJAX para eliminar el servicio
+        fetch('/services/eliminar-servicio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id_servicio: currentServiceId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success || data.message === 'OK') {
+                // Cerrar modal y recargar
+                bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
+                location.reload();
+            } else {
+                alert('Error al eliminar el servicio: ' + (data.error || ''));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el servicio');
+        });
+    });
+    
+    // Focus en el campo de búsqueda al cargar la página
+    searchInput.focus();
+});
+
+// Función para eliminar servicio (compatibilidad con código existente)
+function eliminar_servicio(id_servicio) {
+    const button = document.querySelector(`.delete-service-btn[data-id="${id_servicio}"]`);
+    if (button) {
+        button.click();
+    }
+}
+</script>
+
+<style>
+    /* Estilos específicos para servicios */
+    .service-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        color: var(--bs-white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    .service-name {
+        font-weight: 600;
+        color: var(--bs-heading-color);
+    }
+    
+    .service-id {
+        font-size: 0.8rem;
+    }
+    
+    .service-description {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .price-amount {
+        font-weight: 600;
+        color: var(--bs-success);
+        font-size: 1.1rem;
+    }
+    
+    /* Botones modernos - mismos estilos que la tabla de clientes */
+    .btn-modern {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid;
+        cursor: pointer;
+    }
+    
+
+    
+     .btn-modern-primary {
+        background: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: var(--bs-white);
+    }
+    
+    .btn-modern-primary:hover {
+        background: var(--bs-primary-dark);
+        border-color: var(--bs-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+        color: var(--bs-white);
+    }
+    
+
+    
+    /* Asegurar que los estilos de la tabla sean consistentes */
+    .table-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+    
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        gap: 1.5rem;
+    }
+    
+    .table-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .table-title h2 {
+        color: var(--bs-heading-color);
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        white-space: nowrap;
+    }
+    
+    .table-count {
+        background: var(--bs-primary);
+        color: var(--bs-white);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+    
+    .table-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        justify-content: flex-end;
+        min-width: 0;
+    }
+    
+    .table-search {
+        position: relative;
+        flex: 1;
+        max-width: 400px;
+        min-width: 250px;
+    }
+    
+    .table-search input {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        width: 100%;
+        transition: all 0.2s ease;
+        background: var(--bs-white);
+    }
+    
+    .table-search input:focus {
+        outline: none;
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.1);
+    }
+    
+    .table-search i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--bs-secondary);
+        pointer-events: none;
+    }
+    
+    /* Tabla moderna */
+    .modern-table {
+        width: 100%;
+        background: var(--bs-white);
+        border-radius: 12px;
+        border: 1px solid var(--bs-border-color);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    .modern-table thead {
+        background: var(--bs-light);
+    }
+    
+    .modern-table th {
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: var(--bs-heading-color);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--bs-border-color);
+        white-space: nowrap;
+    }
+    
+    .modern-table td {
+        padding: 1.25rem 1.25rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        vertical-align: middle;
+        color: var(--bs-body-color);
+    }
+    
+    .modern-table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .modern-table tbody tr:hover {
+        background: rgba(var(--bs-primary-rgb), 0.02);
+    }
+    
+    .modern-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Columnas específicas */
+    .col-number {
+        width: 60px;
+        text-align: center;
+        color: var(--bs-secondary);
+        font-weight: 500;
+    }
+    
+    .col-actions {
+        width: 140px;
+        text-align: center;
+    }
+    
+    /* Badges y estados */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    
+    .badge-success {
+        background: var(--bs-success);
+        color: var(--bs-white);
+    }
+    
+    .badge-primary {
+        background: var(--bs-primary);
+        color: var(--bs-white);
+    }
+    
+    .badge-info {
+        background: var(--bs-info);
+        color: var(--bs-white);
+    }
+    
+    .badge-secondary {
+        background: var(--bs-secondary);
+        color: var(--bs-white);
+    }
+    
+    /* Botones de acción pequeños */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    
+    .btn-action-edit {
+        border-color: var(--bs-primary);
+        color: var(--bs-primary);
+        background: transparent;
+    }
+    
+    .btn-action-edit:hover {
+        background: var(--bs-primary);
+        color: var(--bs-white);
+    }
+    
+    .btn-action-delete {
+        border-color: var(--bs-danger);
+        color: var(--bs-danger);
+        background: transparent;
+    }
+    
+    .btn-action-delete:hover {
+        background: var(--bs-danger);
+        color: var(--bs-white);
+    }
+    
+    /* Estado vacío */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--bs-secondary);
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--bs-secondary);
+        opacity: 0.5;
+    }
+    
+    .empty-state h4 {
+        color: var(--bs-heading-color);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .empty-state p {
+        margin-bottom: 2rem;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    
+    /* Estados de búsqueda */
+    .search-highlight {
+        background-color: rgba(var(--bs-warning-rgb), 0.3);
+        color: inherit;
+        padding: 0.1rem 0.2rem;
+        border-radius: 3px;
+        font-weight: 600;
+    }
+    
+    .no-results-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--bs-secondary);
+    }
+    
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .table-search {
+            max-width: 350px;
+        }
+    }
+    
+    @media (max-width: 1024px) {
+        .table-search {
+            max-width: 300px;
+        }
+    }
+    
+    @media (max-width: 900px) {
+        .table-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .table-title {
+            justify-content: space-between;
+        }
+        
+        .table-actions {
+            justify-content: space-between;
+        }
+        
+        .table-search {
+            max-width: 100%;
+            min-width: auto;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .table-container {
+            padding: 1rem 0.75rem;
+        }
+        
+        .modern-table {
+            border-radius: 8px;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 1rem 0.75rem;
+        }
+        
+        .table-title h2 {
+            font-size: 1.25rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .btn-action {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .service-description {
+            max-width: 200px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .table-title {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .table-title h2 {
+            font-size: 1.25rem;
+        }
+        
+        .modern-table {
+            font-size: 0.875rem;
+        }
+        
+        .modern-table th,
+        .modern-table td {
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .empty-state {
+            padding: 2rem 1rem;
+        }
+        
+        .empty-state-icon {
+            font-size: 2.5rem;
+        }
+        
+        .table-actions {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .table-search {
+            order: -1;
+        }
+        
+        .service-description {
+            max-width: 150px;
+        }
+    }
+</style>
+{% endblock %}

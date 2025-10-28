@@ -1,0 +1,119 @@
+{% extends 'admin/base.html' %}
+{% block title %}Editar Pago{% endblock %}
+
+{% block content %}
+<div class="container mt-5 col-md-6">
+  <div class="card shadow-sm">
+    <div class="card-header bg-warning text-white">
+      <h5 class="mb-0">Editar Pago #{{ pago.id_pago }}</h5>
+    </div>
+
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('pagos.editar_pago', id_pago=pago.id_pago) }}">
+        
+        <!-- Usuario -->
+        <div class="mb-3">
+          <label class="form-label">Usuario</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            value="{{ pago.usuario_nombre or '—' }}" 
+            readonly
+          >
+          <small class="text-muted">
+            No se puede modificar el usuario asociado.
+          </small>
+        </div>
+
+        <!-- Servicio o Paquete -->
+        <div class="mb-3">
+          <label class="form-label">Servicio o Paquete</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            value="{{ pago.nombre_servicio or '—' }}" 
+            readonly
+          >
+        </div>
+
+        <!-- Monto -->
+        <div class="mb-3">
+          <label class="form-label">Monto</label>
+          <input 
+            type="number" 
+            name="monto" 
+            step="0.01" 
+            class="form-control"
+            value="{{ pago.precio_servicio or pago.monto }}" 
+            readonly
+          >
+          <small class="text-muted">
+            Monto asignado automáticamente según el servicio o paquete.
+          </small>
+        </div>
+
+        <!-- Método -->
+        <div class="mb-3">
+          <label for="metodo" class="form-label">Método</label>
+          <select id="metodo" name="metodo" class="form-select" required>
+            <option value="efectivo" {% if pago.metodo == 'efectivo' %}selected{% endif %}>
+              Efectivo
+            </option>
+            <option value="paypal" {% if pago.metodo == 'paypal' %}selected{% endif %}>
+              PayPal
+            </option>
+          </select>
+        </div>
+
+        <!-- Estado -->
+        <div class="mb-3">
+          <label for="estado" class="form-label">Estado</label>
+          <select id="estado" name="estado" class="form-select" required>
+            <option value="pendiente" {% if pago.estado == 'pendiente' %}selected{% endif %}>
+              Pendiente
+            </option>
+            <option value="pagado" {% if pago.estado == 'pagado' %}selected{% endif %}>
+              Pagado
+            </option>
+            <option value="cancelado" {% if pago.estado == 'cancelado' %}selected{% endif %}>
+              Cancelado
+            </option>
+          </select>
+        </div>
+
+        <!-- Código de referencia -->
+        <div class="mb-3">
+          <label for="codigo_referencia" class="form-label">Código de referencia</label>
+          <input 
+            type="text" 
+            id="codigo_referencia" 
+            name="codigo_referencia" 
+            class="form-control" 
+            value="{{ pago.codigo_referencia or '' }}" 
+            maxlength="100"
+            placeholder="(opcional)"
+          >
+        </div>
+
+        <!-- Fecha del pago -->
+        <div class="mb-3">
+          <label class="form-label">Fecha del pago</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            value="{% if pago.fecha_pago %}{{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') }}{% else %}—{% endif %}" 
+            readonly
+          >
+        </div>
+
+        <!-- Botones -->
+        <div class="text-end">
+          <button type="submit" class="btn btn-warning text-white">Actualizar</button>
+          <a href="{{ url_for('pagos.lista_pagos') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

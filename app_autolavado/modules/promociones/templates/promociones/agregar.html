@@ -1,0 +1,49 @@
+{% extends 'promociones/base.html' %}
+{% block title %}Nueva Promoción{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm p-4 rounded-4 border-0">
+    <h4 class="fw-bold mb-3 text-primary">
+        <i class="fa fa-plus-circle me-2"></i>Agregar Nueva Promoción
+    </h4>
+    <form method="POST" action="{{ url_for('promociones.agregar_promocion') }}">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Nombre de la promoción</label>
+                <input type="text" name="nombre" class="form-control" placeholder="Ej. Promoción de verano" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Código</label>
+                <input type="text" name="codigo" class="form-control" placeholder="Ej. VERANO2025" required>
+            </div>
+            <div class="col-md-12">
+                <label class="form-label fw-semibold">Descripción</label>
+                <textarea name="descripcion" class="form-control" rows="3" placeholder="Detalles de la promoción..." required></textarea>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Descuento (%)</label>
+                <input type="number" name="descuento" class="form-control" min="1" max="100" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Fecha inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Fecha fin</label>
+                <input type="date" name="fecha_fin" class="form-control" required>
+            </div>
+        </div>
+        <div class="mt-4 d-flex justify-content-between">
+            <a href="{{ url_for('promociones.lista_promociones') }}" class="btn btn-outline-secondary">
+                <i class="fa fa-arrow-left me-1"></i> Volver
+            </a>
+            <button type="submit" class="btn-nueva">
+                <i class="fa fa-save me-1"></i> Guardar Promoción
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- ✅ Cargar el JS del módulo para validar fechas y eliminar promociones -->
+<script src="{{ url_for('promociones.static', filename='js/promociones.js') }}"></script>
+{% endblock %}

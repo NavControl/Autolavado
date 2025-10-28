@@ -1,0 +1,45 @@
+{% extends 'admin/base.html' %}
+{% block title %}Detalle del Pago{% endblock %}
+
+{% block content %}
+<div class="container mt-5 col-md-6">
+  <div class="card shadow-sm">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0">
+        <i class="fas fa-file-invoice-dollar me-2"></i>Detalle del Pago #{{ pago.id_pago }}
+      </h5>
+    </div>
+
+    <div class="card-body">
+      <div class="mb-3">
+        <p><strong>Usuario:</strong> {{ pago.usuario_nombre or '—' }}</p>
+        <p><strong>Método:</strong> {{ pago.metodo|capitalize }}</p>
+        <p><strong>Monto:</strong> ${{ '%.2f'|format(pago.monto) }}</p>
+        <p>
+          <strong>Estado:</strong>
+          {% if pago.estado == 'pagado' %}
+            <span class="badge bg-success">Pagado</span>
+          {% elif pago.estado == 'pendiente' %}
+            <span class="badge bg-warning text-dark">Pendiente</span>
+          {% else %}
+            <span class="badge bg-danger">Cancelado</span>
+          {% endif %}
+        </p>
+        <p><strong>Código de referencia:</strong> {{ pago.codigo_referencia or '—' }}</p>
+        <p><strong>Fecha de pago:</strong> {{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</p>
+      </div>
+
+      <hr>
+
+      <div class="text-end">
+        <a href="{{ url_for('pagos.descargar_recibo', id_pago=pago.id_pago) }}" class="btn btn-success me-2">
+          <i class="fas fa-file-pdf"></i> Descargar Recibo
+        </a>
+        <a href="{{ url_for('pagos.lista_pagos') }}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Regresar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'admin/base.html' %}
+{% block title %}Pagos Registrados{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <h3 class="mb-4 fw-bold">Pagos Registrados</h3>
+
+  <!-- Botón Nuevo Pago -->
+  <div class="text-end mb-3">
+    <a href="{{ url_for('pagos.registrar_pago') }}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Nuevo Pago
+    </a>
+  </div>
+
+  <!-- Mensajes Flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} text-center">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% if pagos %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle text-center shadow-sm">
+      <thead class="table-light border-bottom">
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Monto</th>
+          <th>Método</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pagos %}
+        <tr>
+          <td>{{ p.id_pago }}</td>
+          <td>{{ p.usuario_nombre or '—' }}</td>
+          <td>${{ '%.2f'|format(p.monto) }}</td>
+          <td>{{ p.metodo|capitalize }}</td>
+          <td>{{ p.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>
+            {% if p.estado == 'pagado' %}
+              <span class="badge bg-success">Pagado</span>
+            {% elif p.estado == 'pendiente' %}
+              <span class="badge bg-warning text-dark">Pendiente</span>
+            {% else %}
+              <span class="badge bg-danger">Cancelado</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('pagos.editar_pago', id_pago=p.id_pago) }}" 
+               class="btn btn-sm btn-warning text-white me-1" title="Editar">
+              <i class="fas fa-edit"></i>
+            </a>
+
+            <a href="{{ url_for('pagos.ver_pago', id_pago=p.id_pago) }}" 
+               class="btn btn-sm btn-info text-white me-1" title="Ver Detalles">
+              <i class="fas fa-eye"></i>
+            </a>
+
+            <button 
+              type="button" 
+              class="btn btn-sm btn-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#modalEliminar"
+              data-id="{{ p.id_pago }}"
+              title="Eliminar">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info text-center">No hay pagos registrados.</div>
+  {% endif %}
+</div>
+
+<!-- Modal Eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">¿Seguro que deseas eliminar este pago? Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form id="formEliminar" method="POST">
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Archivo JavaScript para el modal de eliminación -->
+<script src="{{ url_for('pagos.static', filename='js/pagos.js') }}"></script>
+{% endblock %}
