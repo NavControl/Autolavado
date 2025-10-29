@@ -8,7 +8,25 @@ from config.db_connection import get_db_connection
 import os
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+import paypalrestsdk  # requiere tener config/paypal_config.py configurado
 
+# ============================================================
+# UTILIDAD: CREAR O ACTUALIZAR PAGO POR CITA
+# ============================================================
+def upsert_pago_por_cita(conn, id_cita, metodo, estado, monto=0.0, paypal_id=None):
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO pagos (id_cita, metodo, estado, monto, paypal_id, fecha_pago)
+        VALUES (%s, %s, %s, %s, %s, NOW())
+        ON DUPLICATE KEY UPDATE
+            metodo=VALUES(metodo),
+            estado=VALUES(estado),
+            monto=VALUES(monto),
+            paypal_id=VALUES(paypal_id),
+            fecha_pago=NOW()
+    """, (id_cita, metodo, estado, monto, paypal_id))
+    conn.commit()
+    cur.close()
 
 # ============================================================
 # LISTAR PAGOS
@@ -27,7 +45,6 @@ def lista_pagos():
     cur.close()
     conn.close()
     return render_template('pagos/pagos_lista.html', pagos=pagos)
-
 
 # ============================================================
 # VER DETALLE DE PAGO
@@ -52,7 +69,6 @@ def ver_pago(id_pago):
 
     return render_template('pagos/pagos_ver.html', pago=pago)
 
-
 # ============================================================
 # API: AUTOCOMPLETADO DE USUARIOS
 # ============================================================
@@ -73,7 +89,6 @@ def api_usuarios():
     conn.close()
     return jsonify(data)
 
-
 # ============================================================
 # API: SERVICIOS ACTIVOS
 # ============================================================
@@ -91,7 +106,6 @@ def api_servicios():
     cur.close()
     conn.close()
     return jsonify(data)
-
 
 # ============================================================
 # API: PAQUETES ACTIVOS
@@ -111,9 +125,8 @@ def api_paquetes():
     conn.close()
     return jsonify(data)
 
-
 # ============================================================
-# REGISTRAR PAGO
+# REGISTRAR PAGO (ADMINISTRADOR)
 # ============================================================
 @pagos_bp.route('/registrar', methods=['GET', 'POST'], endpoint='registrar_pago')
 def registrar_pago():
@@ -133,13 +146,12 @@ def registrar_pago():
         cur = conn.cursor(dictionary=True)
 
         try:
-            # Obtener precio y nombre del servicio o paquete
             if tipo == 'servicio':
                 cur.execute("SELECT precio, nombre FROM servicios WHERE id_servicio = %s AND activo = 1", (id_item,))
             else:
                 cur.execute("SELECT precio, nombre FROM paquetes WHERE id_paquete = %s AND activo = 1", (id_item,))
-
             row = cur.fetchone()
+
             if not row:
                 flash('No se pudo determinar el precio. Verifique la selección.', 'danger')
                 cur.close()
@@ -150,7 +162,6 @@ def registrar_pago():
             nombre_item = row['nombre']
             estado = 'pagado' if metodo == 'efectivo' else 'pendiente'
 
-            # Insertar el pago en la base de datos
             if tipo == 'servicio':
                 cur.execute("""
                     INSERT INTO pagos (id_usuario, id_servicio, metodo, monto, codigo_referencia, estado, fecha_pago)
@@ -182,7 +193,6 @@ def registrar_pago():
             return redirect(url_for('pagos.registrar_pago'))
 
     return render_template('pagos/pagos_registrar.html')
-
 
 # ============================================================
 # EDITAR PAGO
@@ -250,7 +260,6 @@ def editar_pago(id_pago):
     conn.close()
     return render_template('pagos/pagos_editar.html', pago=pago)
 
-
 # ============================================================
 # ELIMINAR PAGO
 # ============================================================
@@ -269,7 +278,6 @@ def eliminar_pago(id_pago):
         flash(f'Error al eliminar pago: {e}', 'danger')
     return redirect(url_for('pagos.lista_pagos'))
 
-
 # ============================================================
 # DESCARGAR RECIBO PDF
 # ============================================================
@@ -284,7 +292,6 @@ def descargar_recibo(id_pago):
         return redirect(url_for('pagos.lista_pagos'))
 
     return send_file(ruta_pdf, as_attachment=True)
-
 
 # ============================================================
 # GENERAR RECIBO PDF
@@ -319,3 +326,75 @@ def generar_recibo_pdf(id_pago, monto, metodo, descripcion, id_usuario=None, ite
         c.save()
     except Exception as e:
         current_app.logger.warning(f"No se pudo generar el recibo PDF: {e}")
+
+# ============================================================
+# PAGOS DEL CLIENTE (EFECTIVO Y PAYPAL)
+# ============================================================
+@pagos_bp.route('/cliente/<int:id_cita>/efectivo', methods=['POST'])
+def pagar_efectivo(id_cita):
+    conn = get_db_connection()
+    try:
+        monto = float(request.form.get('monto', 0) or 0)
+        upsert_pago_por_cita(conn, id_cita, 'efectivo', 'pendiente', monto)
+        flash('Pago en efectivo registrado como PENDIENTE. Presentarse en el establecimiento.', 'info')
+        return redirect(url_for('client.citas'))
+    finally:
+        conn.close()
+
+@pagos_bp.route('/cliente/<int:id_cita>/paypal/create', methods=['POST'])
+def paypal_create(id_cita):
+    monto = request.form.get('monto', '0.00') or '0.00'
+
+    payment = paypalrestsdk.Payment({
+        "intent": "sale",
+        "payer": {"payment_method": "paypal"},
+        "transactions": [{
+            "amount": {"total": monto, "currency": "MXN"},
+            "description": f"Pago de cita #{id_cita}"
+        }],
+        "redirect_urls": {
+            "return_url": url_for('pagos.paypal_execute', id_cita=id_cita, _external=True),
+            "cancel_url": url_for('pagos.paypal_cancel', id_cita=id_cita, _external=True)
+        }
+    })
+
+    if payment.create():
+        conn = get_db_connection()
+        try:
+            upsert_pago_por_cita(conn, id_cita, 'paypal', 'en_proceso', float(monto), paypal_id=payment.id)
+        finally:
+            conn.close()
+
+        for link in payment.links:
+            if link.rel == "approval_url":
+                return redirect(link.href)
+        return render_template('client/pagos/error.html', mensaje='No se obtuvo URL de aprobación.')
+    else:
+        return render_template('client/pagos/error.html', mensaje='No fue posible crear el pago en PayPal.')
+
+@pagos_bp.route('/cliente/<int:id_cita>/paypal/execute', methods=['GET'])
+def paypal_execute(id_cita):
+    payment_id = request.args.get('paymentId')
+    payer_id = request.args.get('PayerID')
+
+    payment = paypalrestsdk.Payment.find(payment_id)
+    if payment.execute({"payer_id": payer_id}):
+        conn = get_db_connection()
+        try:
+            total = payment.transactions[0].amount.total
+            upsert_pago_por_cita(conn, id_cita, 'paypal', 'pagado', float(total), paypal_id=payment.id)
+        finally:
+            conn.close()
+
+        return render_template('client/pagos/exito.html', id_cita=id_cita)
+    else:
+        return render_template('client/pagos/error.html', mensaje='PayPal no confirmó el pago.')
+
+@pagos_bp.route('/cliente/<int:id_cita>/paypal/cancel', methods=['GET'])
+def paypal_cancel(id_cita):
+    conn = get_db_connection()
+    try:
+        upsert_pago_por_cita(conn, id_cita, 'paypal', 'cancelado', 0.0, None)
+    finally:
+        conn.close()
+    return render_template('client/pagos/error.html', mensaje='Pago cancelado por el usuario.')

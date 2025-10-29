@@ -4,68 +4,7 @@
 
 {% block extra_css %}
 {{ super() }}
-<style>
-.steps {
-    display: flex;
-    justify-content: space-between;
-    position: relative;
-    margin-bottom: 2rem;
-}
-.steps::before {
-    content: '';
-    position: absolute;
-    top: 20px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: #e9ecef;
-    z-index: 1;
-}
-.step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-    flex: 1;
-}
-.step-number {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #e9ecef;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    margin-bottom: 8px;
-    border: 3px solid white;
-}
-.step.completed .step-number {
-    background-color: #28a745;
-    color: white;
-}
-.step.active .step-number {
-    background-color: #007bff;
-    color: white;
-}
-.step-label {
-    font-size: 0.875rem;
-    color: #6c757d;
-    text-align: center;
-}
-.step.active .step-label {
-    color: #007bff;
-    font-weight: bold;
-}
-.card {
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-.card-header {
-    border-radius: 10px 10px 0 0 !important;
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('client.static', filename='css/confirmar_cita.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -79,28 +18,12 @@
                     </h4>
                 </div>
                 <div class="card-body">
-                    <!-- Steps -->
                     <div class="steps">
-                        <div class="step completed">
-                            <div class="step-number">1</div>
-                            <div class="step-label">Inicio</div>
-                        </div>
-                        <div class="step completed">
-                            <div class="step-number">2</div>
-                            <div class="step-label">Servicios</div>
-                        </div>
-                        <div class="step completed">
-                            <div class="step-number">3</div>
-                            <div class="step-label">Fecha y Hora</div>
-                        </div>
-                        <div class="step completed">
-                            <div class="step-number">4</div>
-                            <div class="step-label">Vehículo</div>
-                        </div>
-                        <div class="step active">
-                            <div class="step-number">5</div>
-                            <div class="step-label">Confirmar</div>
-                        </div>
+                        <div class="step completed"><div class="step-number">1</div><div class="step-label">Inicio</div></div>
+                        <div class="step completed"><div class="step-number">2</div><div class="step-label">Servicios</div></div>
+                        <div class="step completed"><div class="step-number">3</div><div class="step-label">Fecha y Hora</div></div>
+                        <div class="step completed"><div class="step-number">4</div><div class="step-label">Vehículo</div></div>
+                        <div class="step active"><div class="step-number">5</div><div class="step-label">Confirmar</div></div>
                     </div>
 
                     <div class="row">
@@ -114,47 +37,45 @@
                                 <div class="card-body">
                                     <div class="row mb-3">
                                         <div class="col-md-6">
-                                            <strong class="text-dark">Fecha:</strong> 
+                                            <strong class="text-dark">Fecha:</strong>
                                             <span id="confirmar-fecha" class="text-dark">-</span>
                                         </div>
                                         <div class="col-md-6">
-                                            <strong class="text-dark">Hora:</strong> 
+                                            <strong class="text-dark">Hora:</strong>
                                             <span id="confirmar-hora" class="text-dark">-</span>
                                         </div>
                                     </div>
                                     <div class="row mb-3">
                                         <div class="col-12">
-                                            <strong class="text-dark">Vehículo:</strong> 
+                                            <strong class="text-dark">Vehículo:</strong>
                                             <span id="confirmar-vehiculo" class="text-dark">-</span>
                                         </div>
                                     </div>
                                     <div class="row">
                                         <div class="col-12">
                                             <strong class="text-dark">Servicios seleccionados:</strong>
-                                            <ul id="confirmar-servicios" class="mt-2 list-unstyled">
-                                                <!-- Los servicios se cargarán aquí -->
-                                            </ul>
+                                            <ul id="confirmar-servicios" class="mt-2 list-unstyled"></ul>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-md-4">
                             <div class="card bg-light">
-                                <div class="card-body">
+                                <div class="card-body text-center">
                                     <h6 class="text-dark">
                                         <i class="fas fa-dollar-sign me-2"></i>Total a Pagar
                                     </h6>
-                                    <div class="text-center py-3">
-                                        <h3 class="text-success">$<span id="confirmar-total">0</span></h3>
-                                        <p class="text-muted">Duración estimada: <span id="confirmar-duracion">0</span> minutos</p>
-                                    </div>
+                                    <h3 class="text-success">$<span id="confirmar-total">0</span></h3>
+                                    <p class="text-muted mb-0">
+                                        Duración estimada: <span id="confirmar-duracion">0</span> minutos
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Navegación -->
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{{ url_for('client.informacion_vehiculo_cliente') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Anterior
@@ -168,118 +89,14 @@
         </div>
     </div>
 </div>
+
+<!-- Datos de sesión renderizados como JSON para JS -->
+<script id="data-servicios" type="application/json">{{ session.get('servicios_seleccionados', []) | tojson }}</script>
+<script id="data-fecha" type="application/json">{{ session.get('fecha_seleccionada', 'null') | tojson }}</script>
+<script id="data-hora" type="application/json">{{ session.get('hora_seleccionada', 'null') | tojson }}</script>
+<script id="data-vehiculo" type="application/json">{{ session.get('vehiculo_info', {}) | tojson }}</script>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const btnConfirmar = document.getElementById('btn-confirmar');
-
-    // Cargar datos de la cita
-    async function cargarDatosCita() {
-        try {
-            // Intentar cargar desde la sesión primero
-            const serviciosSeleccionados = {{ session.get('servicios_seleccionados', []) | tojson }};
-            const fechaSeleccionada = {{ session.get('fecha_seleccionada', 'null') | tojson }};
-            const horaSeleccionada = {{ session.get('hora_seleccionada', 'null') | tojson }};
-            const vehiculoInfo = {{ session.get('vehiculo_info', {}) | tojson }};
-
-            if (serviciosSeleccionados.length > 0 && fechaSeleccionada && horaSeleccionada && vehiculoInfo.marca) {
-                mostrarDatosCita({
-                    servicios: serviciosSeleccionados,
-                    fecha: fechaSeleccionada,
-                    hora: horaSeleccionada,
-                    vehiculo: vehiculoInfo
-                });
-            } else {
-                // Si no hay datos en sesión, intentar cargar desde la API
-                const response = await fetch('{{ url_for("client.api_datos_cita") }}');
-                const data = await response.json();
-                if (data.servicios && data.servicios.length > 0 && data.fecha && data.hora && data.vehiculo) {
-                    mostrarDatosCita(data);
-                } else {
-                    alert('No se encontraron datos de la cita. Por favor, comienza de nuevo.');
-                    window.location.href = '{{ url_for("client.nueva_cita") }}';
-                }
-            }
-        } catch (error) {
-            console.error('Error al cargar datos de la cita:', error);
-            alert('Error al cargar los datos de la cita. Por favor, intenta de nuevo.');
-        }
-    }
-
-    function mostrarDatosCita(data) {
-        // Mostrar fecha y hora
-        document.getElementById('confirmar-fecha').textContent = data.fecha;
-        document.getElementById('confirmar-hora').textContent = data.hora;
-
-        // Mostrar vehículo
-        const vehiculo = data.vehiculo;
-        let vehiculoText = `${vehiculo.marca} ${vehiculo.modelo} - ${vehiculo.placas}`;
-        if (vehiculo.color) {
-            vehiculoText += ` (${vehiculo.color})`;
-        }
-        document.getElementById('confirmar-vehiculo').textContent = vehiculoText;
-
-        // Mostrar servicios
-        const serviciosList = document.getElementById('confirmar-servicios');
-        let total = 0;
-        let duracionTotal = 0;
-
-        serviciosList.innerHTML = '';
-        data.servicios.forEach(servicio => {
-            const li = document.createElement('li');
-            li.className = 'd-flex justify-content-between mb-2';
-            li.innerHTML = `
-                <span class="text-dark">${servicio.nombre}</span>
-                <span class="text-dark">$${servicio.precio}</span>
-            `;
-            serviciosList.appendChild(li);
-            total += parseFloat(servicio.precio);
-            duracionTotal += parseInt(servicio.duracion);
-        });
-
-        // Mostrar total y duración
-        document.getElementById('confirmar-total').textContent = total.toFixed(2);
-        document.getElementById('confirmar-duracion').textContent = duracionTotal;
-    }
-
-    // Confirmar cita
-    btnConfirmar.addEventListener('click', async function() {
-        if (!confirm('¿Estás seguro de confirmar esta cita?')) {
-            return;
-        }
-
-        btnConfirmar.disabled = true;
-        btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
-
-        try {
-            const response = await fetch('{{ url_for("client.procesar_cita_cliente") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const data = await response.json();
-            
-            if (data.success) {
-                window.location.href = '{{ url_for("client.confirmacion_cita_cliente", id_cita=0) }}'.replace('0', data.id_cita);
-            } else {
-                alert('Error al confirmar la cita: ' + data.message);
-                btnConfirmar.disabled = false;
-                btnConfirmar.innerHTML = '<i class="fas fa-calendar-check me-2"></i>Confirmar Cita';
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al confirmar la cita');
-            btnConfirmar.disabled = false;
-            btnConfirmar.innerHTML = '<i class="fas fa-calendar-check me-2"></i>Confirmar Cita';
-        }
-    });
-
-    // Cargar datos al inicio
-    cargarDatosCita();
-});
-</script>
+<script src="{{ url_for('client.static', filename='js/confirmar_cita.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'client/base.html' %}
+{% block title %}Error en pago{% endblock %}
+{% block content %}
+<div class="alert alert-danger rounded-4">
+  <h5 class="mb-2">No se pudo procesar el pago ❌</h5>
+  <p>{{ mensaje|default('Intenta de nuevo más tarde.') }}</p>
+  <a class="btn btn-outline-danger mt-2" href="{{ url_for('client.dashboard') }}">Volver al panel</a>
+</div>
+{% endblock %}

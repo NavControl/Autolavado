@@ -695,33 +695,33 @@ def procesar_cita_cliente():
         fecha = session.get('fecha_seleccionada')
         hora = session.get('hora_seleccionada')
         vehiculo_info = session.get('vehiculo_info', {})
-        
-        print(f"🔍 Datos de la cita:")
+
+        print("🔍 Datos de la cita:")
         print(f"   Servicios: {servicios_seleccionados}")
         print(f"   Fecha: {fecha}")
         print(f"   Hora: {hora}")
         print(f"   Vehículo: {vehiculo_info}")
-        
+
         if not all([servicios_seleccionados, fecha, hora, vehiculo_info]):
             return jsonify({"success": False, "message": "Faltan datos de la cita"}), 400
-        
+
         conn = get_db_connection()
         cur = conn.cursor(dictionary=True)
-        
+
         # Calcular total y duración
         total = sum(float(servicio['precio']) for servicio in servicios_seleccionados)
         duracion_total = sum(int(servicio['duracion']) for servicio in servicios_seleccionados)
-        
+
         # Obtener cliente
         id_usuario = session.get('user_id')
         cur.execute("SELECT id_cliente FROM clientes WHERE id_usuario = %s", (id_usuario,))
         cliente = cur.fetchone()
-        
+
         if not cliente:
             return jsonify({"success": False, "message": "Cliente no encontrado"}), 404
-        
+
         id_cliente = cliente['id_cliente']
-        
+
         # Crear vehículo
         cur.execute("""
             INSERT INTO vehiculos (marca, modelo, placas, color, anio, id_cliente)
@@ -735,29 +735,20 @@ def procesar_cita_cliente():
             id_cliente
         ))
         id_vehiculo = cur.lastrowid
-        
+
         # Crear cita
         cur.execute("""
             INSERT INTO citas (id_cliente, id_vehiculo, fecha, hora, duracion_total, total, estado)
             VALUES (%s, %s, %s, %s, %s, %s, 'pendiente')
         """, (id_cliente, id_vehiculo, fecha, hora, duracion_total, total))
         id_cita = cur.lastrowid
-        
-        # Agregar servicios a la cita - CON VALIDACIÓN
+
+        # Agregar servicios a la cita
         for servicio in servicios_seleccionados:
             servicio_id = servicio['id']
             servicio_tipo = servicio['tipo']
-            
-            print(f"📦 Procesando servicio: ID={servicio_id}, Tipo={servicio_tipo}")
-            
-            # Validar que el servicio/paquete existe
+
             if servicio_tipo == 'servicio':
-                # Verificar que el servicio existe
-                cur.execute("SELECT id_servicio FROM servicios WHERE id_servicio = %s", (servicio_id,))
-                if not cur.fetchone():
-                    print(f"❌ Servicio no encontrado: {servicio_id}")
-                    continue
-                
                 cur.execute("""
                     INSERT INTO cita_servicios (id_cita, id_servicio, tipo, precio, duracion)
                     VALUES (%s, %s, %s, %s, %s)
@@ -768,22 +759,18 @@ def procesar_cita_cliente():
                     servicio['precio'],
                     servicio['duracion']
                 ))
-                
+
             elif servicio_tipo == 'paquete':
-                # Para paquetes, necesitamos obtener los servicios que incluye
                 cur.execute("""
                     SELECT ps.id_servicio 
                     FROM paquete_servicios ps 
                     WHERE ps.id_paquete = %s
                 """, (servicio_id,))
-                
                 servicios_del_paquete = cur.fetchall()
-                
+
                 if not servicios_del_paquete:
-                    print(f"❌ No se encontraron servicios para el paquete: {servicio_id}")
                     continue
-                
-                # Insertar cada servicio del paquete
+
                 for servicio_paquete in servicios_del_paquete:
                     cur.execute("""
                         INSERT INTO cita_servicios (id_cita, id_servicio, tipo, precio, duracion)
@@ -791,30 +778,23 @@ def procesar_cita_cliente():
                     """, (
                         id_cita,
                         servicio_paquete['id_servicio'],
-                        'paquete',  # O 'servicio' dependiendo de tu lógica de negocio
-                        servicio['precio'] / len(servicios_del_paquete),  # Distribuir precio
-                        servicio['duracion'] / len(servicios_del_paquete)  # Distribuir duración
+                        'paquete',
+                        servicio['precio'] / len(servicios_del_paquete),
+                        servicio['duracion'] / len(servicios_del_paquete)
                     ))
-        
+
         conn.commit()
-        
-        # ==================== ENVÍO DE CORREO ELECTRÓNICO ====================
-        print("🔍 INICIANDO PROCESO DE CORREO PARA NUEVA CITA...")
+
+        # ==================== Envío de correo ====================
         try:
-            # Obtener información del cliente para el correo
             cur.execute("""
                 SELECT u.nombre_completo, u.correo 
                 FROM usuarios u 
                 WHERE u.id_usuario = %s
             """, (id_usuario,))
             cliente_info = cur.fetchone()
-            
-            print(f"📋 Cliente info: {cliente_info}")
-            
+
             if cliente_info and cliente_info['correo']:
-                print(f"✅ Cliente con email: {cliente_info['correo']}")
-                
-                # Preparar datos para el correo
                 datos_cita_correo = {
                     'nombre_cliente': cliente_info['nombre_completo'],
                     'fecha': fecha,
@@ -825,46 +805,40 @@ def procesar_cita_cliente():
                     'total': total,
                     'servicios': servicios_seleccionados
                 }
-                
-                print(f"📝 Datos cita: {datos_cita_correo}")
-                
-                # Generar el contenido del correo
+
                 mensaje_html = plantilla_confirmacion_cita(datos_cita_correo)
-                print(f"📄 HTML generado ({len(mensaje_html)} caracteres)")
-                
-                # Enviar el correo
-                resultado_correo = enviar_correo(
+                enviar_correo(
                     destinatario=cliente_info['correo'],
                     asunto=f"✅ Confirmación de Cita - Autolavado - {fecha}",
                     mensaje_html=mensaje_html
                 )
-                
-                print(f"📧 Resultado envío de correo: {resultado_correo}")
-            else:
-                print("❌ No se pudo obtener información del cliente o no tiene email")
-                
         except Exception as e:
-            print(f"💥 Error en proceso de correo: {str(e)}")
-            import traceback
-            traceback.print_exc()
-        # ==================== FIN ENVÍO DE CORREO ====================
-        
+            print(f"Error en envío de correo: {e}")
+        # ========================================================
+
         cur.close()
         conn.close()
-        
+
         # Limpiar sesión
         session.pop('servicios_seleccionados', None)
         session.pop('fecha_seleccionada', None)
         session.pop('hora_seleccionada', None)
         session.pop('vehiculo_info', None)
-        
-        return jsonify({"success": True, "message": "Cita creada exitosamente", "id_cita": id_cita}), 200
-        
+
+        # Redirigir directamente a la vista de pago
+        redirect_url = url_for('client.pago_cliente', id_cita=id_cita)
+        return jsonify({
+            "success": True,
+            "message": "Cita creada exitosamente",
+            "redirect_url": redirect_url
+        }), 200
+
     except Exception as e:
         print(f"❌ Error al procesar cita: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "message": str(e)}), 500
+
         
 @client_bp.route('/confirmacion/<int:id_cita>')
 def confirmacion_cita_cliente(id_cita):
@@ -1213,3 +1187,74 @@ def api_verificar_disponibilidad_cita():
     disponible = cita_existente['count'] == 0
     
     return jsonify({'disponible': disponible, 'success': True})
+
+# ==================== 💰 Ruta de Pago del Cliente ====================
+@client_bp.route('/pagos/<int:id_cita>', methods=['GET', 'POST'])
+def pago_cliente(id_cita):
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    try:
+        cur.execute("""
+            SELECT
+                c.id_cita,
+                c.fecha,
+                c.hora,
+                COALESCE(c.total, SUM(cs.precio)) AS total,
+                c.estado,
+                v.marca,
+                v.modelo,
+                v.placas
+            FROM citas c
+            JOIN clientes cl ON c.id_cliente = cl.id_cliente
+            JOIN usuarios u ON cl.id_usuario = u.id_usuario
+            LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+            LEFT JOIN cita_servicios cs ON cs.id_cita = c.id_cita
+            WHERE c.id_cita = %s
+              AND u.id_usuario = %s
+            GROUP BY c.id_cita, c.fecha, c.hora, c.estado, v.marca, v.modelo, v.placas
+        """, (id_cita, session['user_id']))
+        cita = cur.fetchone()
+
+        if not cita:
+            flash("No se encontró la cita o no tienes permiso para verla.", "danger")
+            return redirect(url_for('client.citas'))
+
+        if request.method == 'POST':
+            metodo = (request.form.get('metodo_pago') or '').lower().strip()
+            if metodo not in ('efectivo', 'paypal'):
+                flash('Método de pago inválido.', 'warning')
+                return redirect(url_for('client.pago_cliente', id_cita=id_cita))
+
+            monto = float(cita['total'] or 0)
+
+            if metodo == 'efectivo':
+                cur.execute("""
+                    INSERT INTO pagos (id_cita, monto, metodo_pago, estado, fecha_pago)
+                    VALUES (%s, %s, 'Efectivo', 'pendiente', NOW())
+                """, (id_cita, monto))
+                flash('Pago en efectivo registrado. Se validará al presentarte en el establecimiento.', 'info')
+
+            elif metodo == 'paypal':
+                cur.execute("""
+                    INSERT INTO pagos (id_cita, monto, metodo_pago, estado, fecha_pago)
+                    VALUES (%s, %s, 'PayPal', 'completado', NOW())
+                """, (id_cita, monto))
+                flash('Pago completado con PayPal.', 'success')
+
+            conn.commit()
+            return redirect(url_for('client.citas'))
+
+        return render_template('pagos/seleccionar_pago.html', cita=cita)
+
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error al procesar el pago: {e}", "danger")
+        return redirect(url_for('client.citas'))
+
+    finally:
+        cur.close()
+        conn.close()

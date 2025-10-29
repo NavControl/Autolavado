@@ -1,0 +1,82 @@
+{% extends 'client/base.html' %}
+{% block title %}Pago de la cita{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('client.static', filename='css/seleccionar_pago.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card pago-card shadow-sm border-0 rounded-4 p-4">
+        <div class="text-center mb-4">
+          <h4 class="fw-bold text-primary">
+            <i class="fas fa-wallet me-2"></i>Selecciona tu método de pago
+          </h4>
+        </div>
+
+        <div class="detalle-cita mb-4">
+          <p><strong>Cita:</strong> #{{ cita.id_cita }}</p>
+          <p><strong>Servicio:</strong> {{ cita.servicio or 'N/A' }}</p>
+          <p><strong>Total:</strong> <span class="text-success fw-semibold">${{ cita.total }}</span></p>
+        </div>
+
+        <div class="text-center d-flex flex-column gap-3">
+          <!-- 🔹 Pago en Efectivo -->
+          <form id="form-efectivo" method="POST" action="{{ url_for('client.pago_cliente', id_cita=cita.id_cita) }}">
+            <input type="hidden" name="metodo_pago" value="efectivo">
+            <button class="btn btn-outline-dark w-100 py-3" type="submit" id="btn-efectivo">
+              <i class="fas fa-money-bill-wave me-2"></i>Pagar en efectivo
+            </button>
+          </form>
+
+          <!-- 🔹 Pago con PayPal -->
+          <form id="form-paypal" method="POST" action="{{ url_for('client.pago_cliente', id_cita=cita.id_cita) }}">
+            <input type="hidden" name="metodo_pago" value="paypal">
+            <button class="btn btn-primary w-100 py-3" type="submit" id="btn-paypal">
+              <i class="fab fa-paypal me-2"></i>Pagar con PayPal
+            </button>
+          </form>
+        </div>
+
+        <div class="mt-4 text-center">
+          <a href="{{ url_for('client.cliente_inicio') }}" class="text-muted text-decoration-none">
+            <i class="fas fa-arrow-left me-1"></i>Volver al inicio
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmación (por si lo quieres habilitar más adelante) -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-semibold"><i class="fas fa-credit-card me-2"></i>Confirmar método de pago</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <p id="texto-confirmacion" class="fs-5 mb-3"></p>
+        <div class="detalle-modal bg-light p-3 rounded-3 shadow-sm">
+          <p><strong>Servicio:</strong> <span id="modal-servicio" class="text-dark"></span></p>
+          <p><strong>Total:</strong> <span id="modal-total" class="text-success fw-bold"></span></p>
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-center gap-3 border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirmar-modal">
+          <i class="fas fa-check me-2"></i>Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('client.static', filename='js/seleccionar_pago.js') }}"></script>
+{% endblock %}

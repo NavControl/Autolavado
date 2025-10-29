@@ -1,0 +1,60 @@
+.pago-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.pago-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.detalle-cita {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+}
+
+.detalle-cita p {
+  margin: 0.3rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.btn-outline-dark {
+  border-width: 2px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-dark:hover {
+  background-color: #212529;
+  color: #fff;
+}
+
+.btn-primary {
+  font-weight: 500;
+  background: linear-gradient(90deg, #007bff, #0056d2);
+  border: none;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: scale(1.02);
+  background: linear-gradient(90deg, #0069d9, #004bbd);
+}
+
+.modal-content {
+  border-radius: 20px;
+}
+
+.detalle-modal p {
+  margin: 0.4rem 0;
+  font-size: 1.05rem;
+}
+
+.detalle-modal strong {
+  color: #333;
+}
