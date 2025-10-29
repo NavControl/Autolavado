@@ -11,36 +11,46 @@
   <div class="row justify-content-center">
     <div class="col-lg-7">
       <div class="card pago-card shadow-sm border-0 rounded-4 p-4">
+        
+        <!-- 🔹 Título -->
         <div class="text-center mb-4">
           <h4 class="fw-bold text-primary">
             <i class="fas fa-wallet me-2"></i>Selecciona tu método de pago
           </h4>
         </div>
 
+        <!-- 🔹 Detalle de la cita -->
         <div class="detalle-cita mb-4">
           <p><strong>Cita:</strong> #{{ cita.id_cita }}</p>
           <p><strong>Servicio:</strong> {{ cita.servicio or 'N/A' }}</p>
-          <p><strong>Total:</strong> <span class="text-success fw-semibold">${{ cita.total }}</span></p>
+          <p><strong>Total:</strong> 
+            <span class="text-success fw-semibold">${{ cita.total }}</span>
+          </p>
         </div>
 
+        <!-- 🔹 Métodos de pago -->
         <div class="text-center d-flex flex-column gap-3">
-          <!-- 🔹 Pago en Efectivo -->
-          <form id="form-efectivo" method="POST" action="{{ url_for('client.pago_cliente', id_cita=cita.id_cita) }}">
-            <input type="hidden" name="metodo_pago" value="efectivo">
+          
+          <!-- 💵 Pago en Efectivo -->
+          <form id="form-efectivo" method="POST"
+                action="{{ url_for('pagos.pagar_efectivo', id_cita=cita.id_cita) }}">
+            <input type="hidden" name="monto" value="{{ cita.total }}">
             <button class="btn btn-outline-dark w-100 py-3" type="submit" id="btn-efectivo">
               <i class="fas fa-money-bill-wave me-2"></i>Pagar en efectivo
             </button>
           </form>
 
-          <!-- 🔹 Pago con PayPal -->
-          <form id="form-paypal" method="POST" action="{{ url_for('client.pago_cliente', id_cita=cita.id_cita) }}">
-            <input type="hidden" name="metodo_pago" value="paypal">
+          <!-- 💳 Pago con PayPal -->
+          <form id="form-paypal" method="POST"
+                action="{{ url_for('pagos.paypal_create', id_cita=cita.id_cita) }}">
+            <input type="hidden" name="monto" value="{{ cita.total }}">
             <button class="btn btn-primary w-100 py-3" type="submit" id="btn-paypal">
               <i class="fab fa-paypal me-2"></i>Pagar con PayPal
             </button>
           </form>
         </div>
 
+        <!-- 🔹 Regresar al inicio -->
         <div class="mt-4 text-center">
           <a href="{{ url_for('client.cliente_inicio') }}" class="text-muted text-decoration-none">
             <i class="fas fa-arrow-left me-1"></i>Volver al inicio
@@ -51,12 +61,14 @@
   </div>
 </div>
 
-<!-- Modal de confirmación (por si lo quieres habilitar más adelante) -->
+<!-- 🔹 Modal de confirmación -->
 <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-4 border-0 shadow">
       <div class="modal-header bg-primary text-white rounded-top-4">
-        <h5 class="modal-title fw-semibold"><i class="fas fa-credit-card me-2"></i>Confirmar método de pago</h5>
+        <h5 class="modal-title fw-semibold">
+          <i class="fas fa-credit-card me-2"></i>Confirmar método de pago
+        </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center py-4">

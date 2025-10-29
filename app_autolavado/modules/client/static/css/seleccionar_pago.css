@@ -1,3 +1,4 @@
+/* 🎨 Tarjeta principal */
 .pago-card {
   background: #fff;
   border-radius: 16px;
@@ -8,21 +9,24 @@
 
 .pago-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
 }
 
+/* 💬 Detalles de la cita */
 .detalle-cita {
   background: #f8f9fa;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 1rem 1.5rem;
+  border-left: 4px solid #0d6efd;
 }
 
 .detalle-cita p {
-  margin: 0.3rem 0;
+  margin: 0.4rem 0;
   color: #333;
   font-size: 1rem;
 }
 
+/* 💵 Botones */
 .btn-outline-dark {
   border-width: 2px;
   font-weight: 500;
@@ -34,6 +38,7 @@
   color: #fff;
 }
 
+/* 🔹 Botón PayPal */
 .btn-primary {
   font-weight: 500;
   background: linear-gradient(90deg, #007bff, #0056d2);
@@ -42,10 +47,25 @@
 }
 
 .btn-primary:hover {
-  transform: scale(1.02);
+  transform: scale(1.03);
   background: linear-gradient(90deg, #0069d9, #004bbd);
 }
 
+/* 📱 Adaptabilidad */
+@media (max-width: 768px) {
+  .pago-card {
+    padding: 1.5rem;
+  }
+  .btn {
+    font-size: 0.95rem;
+    padding: 0.8rem;
+  }
+  .detalle-cita {
+    padding: 1rem;
+  }
+}
+
+/* 🧾 Modal */
 .modal-content {
   border-radius: 20px;
 }
@@ -57,4 +77,14 @@
 
 .detalle-modal strong {
   color: #333;
+}
+
+#pago-overlay {
+  backdrop-filter: blur(3px);
+  text-align: center;
+}
+
+#pago-overlay .spinner-border {
+  width: 3rem;
+  height: 3rem;
 }

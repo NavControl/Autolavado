@@ -6,17 +6,20 @@
 document.addEventListener('DOMContentLoaded', () => {
   const btnEfectivo = document.getElementById('btn-efectivo');
   const btnPaypal = document.getElementById('btn-paypal');
-  const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+  const modalElement = document.getElementById('modalConfirmacion');
   const textoConfirmacion = document.getElementById('texto-confirmacion');
   const modalServicio = document.getElementById('modal-servicio');
   const modalTotal = document.getElementById('modal-total');
   const btnConfirmarModal = document.getElementById('btn-confirmar-modal');
 
+  // Verifica que exista el modal antes de instanciarlo
+  const modal = modalElement ? new bootstrap.Modal(modalElement) : null;
+
   let metodoSeleccionado = null;
   let formSeleccionado = null;
 
   // =========================================================
-  // Manejo de botones de pago
+  // Asignar eventos a los botones de pago
   // =========================================================
   [btnEfectivo, btnPaypal].forEach((btn) => {
     if (!btn) return;
@@ -24,56 +27,62 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
 
-      const servicio = btn.dataset.servicio || 'Servicio';
-      const monto = btn.dataset.monto || '0.00';
+      // Obtener datos de la cita desde la interfaz
+      const servicio = document.querySelector('.detalle-cita p:nth-child(2)')?.textContent?.replace('Servicio:', '').trim() || 'Servicio';
+      const monto = document.querySelector('.detalle-cita span.text-success')?.textContent?.replace('$', '').trim() || '0.00';
+
       metodoSeleccionado = btn.id === 'btn-efectivo' ? 'Efectivo' : 'PayPal';
       formSeleccionado = btn.closest('form');
 
-      // Llenar los datos del modal
-      textoConfirmacion.textContent = `¿Deseas confirmar el pago mediante ${metodoSeleccionado}?`;
-      modalServicio.textContent = servicio;
-      modalTotal.textContent = `$${monto}`;
-
-      modal.show();
+      if (modal) {
+        textoConfirmacion.textContent = `¿Deseas confirmar el pago mediante ${metodoSeleccionado}?`;
+        modalServicio.textContent = servicio;
+        modalTotal.textContent = `$${monto}`;
+        modal.show();
+      } else {
+        // Si no hay modal, enviar directamente
+        formSeleccionado.submit();
+      }
     });
   });
 
   // =========================================================
-  // Confirmar método en el modal
+  // Confirmar método desde el modal (flujo tradicional)
   // =========================================================
-  btnConfirmarModal.addEventListener('click', async () => {
-    if (!formSeleccionado) return;
+  if (btnConfirmarModal) {
+    btnConfirmarModal.addEventListener('click', () => {
+      if (!formSeleccionado) return;
 
-    modal.hide();
-    const btn = formSeleccionado.querySelector('button');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+      modal?.hide();
 
-    try {
-      const response = await fetch(formSeleccionado.action, {
-        method: formSeleccionado.method,
-        body: new FormData(formSeleccionado)
+      // Crear overlay visual
+      const overlay = document.createElement('div');
+      overlay.id = 'pago-overlay';
+      overlay.innerHTML = `
+        <div class="overlay-content">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-3 fw-semibold text-dark">Procesando tu pago...</p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      // Aplicar estilos visuales
+      Object.assign(overlay.style, {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: '9999'
       });
 
-      if (!response.ok) throw new Error('Error HTTP al procesar el pago');
-
-      const html = await response.text();
-
-      // Si el backend redirige, actualizamos la vista
-      if (response.redirected) {
-        window.location.href = response.url;
-      } else {
-        // Mostrar mensaje de éxito o actualizar dinámicamente
-        document.body.innerHTML = html;
-      }
-    } catch (error) {
-      console.error('Error al procesar el pago:', error);
-      alert('Error al procesar el pago. Intenta de nuevo.');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = metodoSeleccionado === 'Efectivo'
-        ? '<i class="fas fa-money-bill-wave me-2"></i>Pagar en efectivo'
-        : '<i class="fab fa-paypal me-2"></i>Pagar con PayPal';
-    }
-  });
+      // Envío tradicional (redirige al backend)
+      formSeleccionado.submit();
+    });
+  }
 });

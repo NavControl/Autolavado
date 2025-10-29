@@ -24,41 +24,63 @@ def cliente_inicio():
     cursor = conn.cursor(dictionary=True)
     
     try:
-        # Obtener información del cliente y usuario
+        # 🔹 Obtener información del cliente asociado al usuario
         cursor.execute("""
-            SELECT u.*, c.curp, c.rfc, c.folio, c.fecha_nacimiento, c.id_cliente
+            SELECT 
+                u.*, 
+                c.curp, 
+                c.rfc, 
+                c.folio, 
+                c.fecha_nacimiento, 
+                c.id_cliente
             FROM usuarios u 
             JOIN clientes c ON u.id_usuario = c.id_usuario 
             WHERE u.id_usuario = %s
         """, (user_id,))
         cliente = cursor.fetchone()
-        
-        # Obtener citas próximas
+
+        if not cliente:
+            flash("No se encontró información del cliente asociada al usuario.", "warning")
+            return render_template('client/dashboard.html', cliente=None)
+
+        # 🔹 Obtener las próximas citas (solo las futuras)
         cursor.execute("""
-            SELECT c.*, s.nombre as servicio_nombre, s.precio, s.duracion
-            FROM citas c 
-            JOIN servicios s ON c.servicio_id = s.id 
-            WHERE c.cliente_id = %s AND c.fecha_hora >= CURDATE()
-            ORDER BY c.fecha_hora ASC
+            SELECT 
+                c.id_cita,
+                c.fecha,
+                c.hora,
+                c.estado,
+                c.total,
+                GROUP_CONCAT(s.nombre SEPARATOR ', ') AS servicios,
+                SUM(cs.precio) AS subtotal
+            FROM citas c
+            LEFT JOIN cita_servicios cs ON cs.id_cita = c.id_cita
+            LEFT JOIN servicios s ON cs.id_servicio = s.id_servicio
+            WHERE c.id_cliente = %s
+              AND c.fecha >= CURDATE()
+            GROUP BY c.id_cita
+            ORDER BY c.fecha ASC, c.hora ASC
             LIMIT 5
         """, (cliente['id_cliente'],))
         proximas_citas = cursor.fetchall()
-        
-        # Obtener estadísticas
+
+        # 🔹 Obtener estadísticas generales del cliente
         cursor.execute("""
             SELECT 
-                COUNT(*) as total_citas,
-                SUM(CASE WHEN estado = 'completado' THEN 1 ELSE 0 END) as completadas,
-                SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes
-            FROM citas 
-            WHERE cliente_id = %s
+                COUNT(*) AS total_citas,
+                SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) AS completadas,
+                SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) AS pendientes
+            FROM citas
+            WHERE id_cliente = %s
         """, (cliente['id_cliente'],))
         stats = cursor.fetchone()
-        
-        return render_template('client/dashboard.html', 
-                             cliente=cliente, 
-                             proximas_citas=proximas_citas,
-                             stats=stats)
+
+        return render_template(
+            'client/dashboard.html',
+            cliente=cliente,
+            proximas_citas=proximas_citas,
+            stats=stats
+        )
     
     except Exception as e:
         flash('Error al cargar el dashboard: ' + str(e), 'error')
@@ -67,6 +89,9 @@ def cliente_inicio():
     finally:
         cursor.close()
         conn.close()
+
+
+
 
 # ==================== Perfil del Cliente ====================
 @client_bp.route('/perfil', methods=['GET', 'POST'])
@@ -1188,9 +1213,21 @@ def api_verificar_disponibilidad_cita():
     
     return jsonify({'disponible': disponible, 'success': True})
 
-# ==================== 💰 Ruta de Pago del Cliente ====================
-@client_bp.route('/pagos/<int:id_cita>', methods=['GET', 'POST'])
+# ============================================================
+# 💰 PAGO DE CITAS (CLIENTE) — FLUJO COMPLETO ACTUALIZADO
+# ============================================================
+
+from flask import current_app
+from config.db_connection import get_db_connection
+from config.paypal_config import paypalrestsdk
+
+
+# ============================================================
+# 🧾 1. Mostrar pantalla de selección de método de pago
+# ============================================================
+@client_bp.route('/pagos/<int:id_cita>', methods=['GET'])
 def pago_cliente(id_cita):
+    """Pantalla para elegir método de pago (efectivo o PayPal)."""
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
@@ -1199,23 +1236,20 @@ def pago_cliente(id_cita):
 
     try:
         cur.execute("""
-            SELECT
+            SELECT 
                 c.id_cita,
                 c.fecha,
                 c.hora,
                 COALESCE(c.total, SUM(cs.precio)) AS total,
-                c.estado,
                 v.marca,
                 v.modelo,
                 v.placas
             FROM citas c
-            JOIN clientes cl ON c.id_cliente = cl.id_cliente
-            JOIN usuarios u ON cl.id_usuario = u.id_usuario
-            LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
             LEFT JOIN cita_servicios cs ON cs.id_cita = c.id_cita
-            WHERE c.id_cita = %s
-              AND u.id_usuario = %s
-            GROUP BY c.id_cita, c.fecha, c.hora, c.estado, v.marca, v.modelo, v.placas
+            LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+            JOIN clientes cl ON c.id_cliente = cl.id_cliente
+            WHERE c.id_cita = %s AND cl.id_usuario = %s
+            GROUP BY c.id_cita
         """, (id_cita, session['user_id']))
         cita = cur.fetchone()
 
@@ -1223,38 +1257,168 @@ def pago_cliente(id_cita):
             flash("No se encontró la cita o no tienes permiso para verla.", "danger")
             return redirect(url_for('client.citas'))
 
-        if request.method == 'POST':
-            metodo = (request.form.get('metodo_pago') or '').lower().strip()
-            if metodo not in ('efectivo', 'paypal'):
-                flash('Método de pago inválido.', 'warning')
-                return redirect(url_for('client.pago_cliente', id_cita=id_cita))
-
-            monto = float(cita['total'] or 0)
-
-            if metodo == 'efectivo':
-                cur.execute("""
-                    INSERT INTO pagos (id_cita, monto, metodo_pago, estado, fecha_pago)
-                    VALUES (%s, %s, 'Efectivo', 'pendiente', NOW())
-                """, (id_cita, monto))
-                flash('Pago en efectivo registrado. Se validará al presentarte en el establecimiento.', 'info')
-
-            elif metodo == 'paypal':
-                cur.execute("""
-                    INSERT INTO pagos (id_cita, monto, metodo_pago, estado, fecha_pago)
-                    VALUES (%s, %s, 'PayPal', 'completado', NOW())
-                """, (id_cita, monto))
-                flash('Pago completado con PayPal.', 'success')
-
-            conn.commit()
-            return redirect(url_for('client.citas'))
-
         return render_template('pagos/seleccionar_pago.html', cita=cita)
 
     except Exception as e:
-        conn.rollback()
-        flash(f"Error al procesar el pago: {e}", "danger")
+        flash(f"Error al cargar la cita: {e}", "danger")
         return redirect(url_for('client.citas'))
-
     finally:
         cur.close()
         conn.close()
+
+
+# ============================================================
+# 💵 2. Registrar pago en efectivo (cliente)
+# ============================================================
+@client_bp.route('/pagos/<int:id_cita>/efectivo', methods=['POST'])
+def pago_efectivo_cliente(id_cita):
+    """Registra un pago en efectivo como 'pendiente'."""
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            INSERT INTO pagos (id_cita, metodo, estado, fecha_pago)
+            VALUES (%s, 'efectivo', 'pendiente', NOW())
+            ON DUPLICATE KEY UPDATE 
+                metodo='efectivo',
+                estado='pendiente',
+                fecha_pago=NOW()
+        """, (id_cita,))
+        conn.commit()
+        flash("Pago en efectivo registrado como pendiente. Se validará al acudir al establecimiento.", "info")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error al registrar pago en efectivo: {e}", "danger")
+    finally:
+        cur.close()
+        conn.close()
+
+    return redirect(url_for('client.citas'))
+
+
+# ============================================================
+# 💳 3. Crear pago con PayPal (cliente)
+# ============================================================
+@client_bp.route('/pagos/<int:id_cita>/paypal', methods=['POST'])
+def crear_pago_paypal(id_cita):
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    # ✅ Cálculo seguro del total
+    cur.execute("""
+        SELECT 
+            IFNULL(c.total, (
+                SELECT SUM(cs.precio)
+                FROM cita_servicios cs
+                WHERE cs.id_cita = c.id_cita
+            )) AS total
+        FROM citas c
+        WHERE c.id_cita = %s
+    """, (id_cita,))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not row or not row['total']:
+        return render_template('pagos/error.html', mensaje="El monto de la cita es inválido o nulo.")
+
+    total = f"{float(row['total']):.2f}"
+
+    payment = paypalrestsdk.Payment({
+        "intent": "sale",
+        "payer": {"payment_method": "paypal"},
+        "transactions": [{
+            "amount": {"total": total, "currency": "MXN"},
+            "description": f"Pago de cita #{id_cita}"
+        }],
+        "redirect_urls": {
+            "return_url": url_for('client.ejecutar_pago_paypal', id_cita=id_cita, _external=True),
+            "cancel_url": url_for('client.cancelar_pago_paypal', id_cita=id_cita, _external=True)
+        }
+    })
+
+    if payment.create():
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO pagos (id_cita, metodo, estado, transaccion_id, monto, fecha_pago)
+            VALUES (%s, 'paypal', 'pendiente', %s, %s, NOW())
+            ON DUPLICATE KEY UPDATE 
+                metodo='paypal',
+                estado='pendiente',
+                transaccion_id=%s,
+                monto=%s,
+                fecha_pago=NOW()
+        """, (id_cita, payment.id, row['total'], payment.id, row['total']))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        for link in payment.links:
+            if link.rel == "approval_url":
+                return redirect(link.href)
+
+        return render_template('pagos/error.html', mensaje="No se obtuvo URL de aprobación.")
+    else:
+        current_app.logger.error(f"PayPal create error: {payment.error}")
+        return render_template('pagos/error.html', mensaje="No fue posible crear el pago en PayPal.")
+
+
+
+
+# ============================================================
+# ✅ 4. Ejecutar pago PayPal tras la autorización
+# ============================================================
+@client_bp.route('/pagos/<int:id_cita>/paypal/execute')
+def ejecutar_pago_paypal(id_cita):
+    """Completa la transacción de PayPal."""
+    payment_id = request.args.get('paymentId')
+    payer_id = request.args.get('PayerID')
+
+    try:
+        payment = paypalrestsdk.Payment.find(payment_id)
+        if payment.execute({"payer_id": payer_id}):
+            total = float(payment.transactions[0].amount.total)
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                UPDATE pagos 
+                SET estado='pagado', monto=%s, fecha_pago=NOW()
+                WHERE id_cita=%s
+            """, (total, id_cita))
+            conn.commit()
+            cur.close()
+            conn.close()
+            return render_template('pagos/exito.html', id_cita=id_cita)
+        else:
+            current_app.logger.error(payment.error)
+            return render_template('pagos/error.html', mensaje="No se pudo completar el pago en PayPal.")
+
+
+    except Exception as e:
+        current_app.logger.exception("Error ejecutando pago PayPal")
+        return render_template('pagos/error.html', mensaje=f"Error al confirmar el pago: {e}")
+
+
+# ============================================================
+# ❌ 5. Cancelar pago PayPal
+# ============================================================
+@client_bp.route('/pagos/<int:id_cita>/paypal/cancel')
+def cancelar_pago_paypal(id_cita):
+    """Cancela el pago PayPal en proceso."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE pagos 
+        SET estado='cancelado'
+        WHERE id_cita=%s
+    """, (id_cita,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return render_template('pagos/error.html', mensaje="Pago cancelado por el usuario.")
+

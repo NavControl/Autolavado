@@ -1,0 +1,67 @@
+{% extends 'client/base.html' %}
+{% block title %}Recibo de pago{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('client.static', filename='css/ticket_pago.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card recibo-card border-0 rounded-4 p-4">
+        <!-- 🔹 Encabezado -->
+        <div class="text-center mb-3">
+          <i class="fas fa-receipt recibo-icon mb-3"></i>
+          <h4 class="fw-bold text-primary">Recibo de Pago</h4>
+          <p class="text-muted mb-0">Tu transacción se ha registrado correctamente.</p>
+        </div>
+
+        <!-- 🔹 Detalle del pago -->
+        <div class="detalle-recibo mb-4">
+          <p><strong>ID de pago:</strong> #{{ pago.id_pago }}</p>
+          <p><strong>Cita:</strong> #{{ pago.id_cita }}</p>
+
+          <p><strong>Método:</strong>
+            {% if pago.metodo == 'paypal' %}
+              <span class="badge bg-primary">PayPal</span>
+            {% else %}
+              <span class="badge bg-dark">Efectivo</span>
+            {% endif %}
+          </p>
+
+          <p><strong>Estado:</strong>
+            {% if pago.estado == 'pagado' %}
+              <span class="badge bg-success">Pagado</span>
+            {% elif pago.estado == 'pendiente' %}
+              <span class="badge bg-warning text-dark">Pendiente</span>
+            {% else %}
+              <span class="badge bg-secondary text-light">{{ pago.estado }}</span>
+            {% endif %}
+          </p>
+
+          <p><strong>Monto:</strong>
+            <span class="fw-semibold text-success">${{ "%.2f"|format(pago.monto) }}</span>
+          </p>
+
+          <p><strong>Fecha:</strong>
+            {{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') if pago.fecha_pago else '—' }}
+          </p>
+        </div>
+
+        <!-- 🔹 Acciones -->
+        <div class="text-center">
+          <a class="btn btn-outline-primary me-2" 
+             href="{{ url_for('pagos.descargar_recibo', id_pago=pago.id_pago) }}">
+            <i class="fas fa-download me-2"></i>Descargar PDF
+          </a>
+          <a class="btn btn-secondary" href="{{ url_for('client.dashboard') }}">
+            <i class="fas fa-arrow-left me-2"></i>Volver al panel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
