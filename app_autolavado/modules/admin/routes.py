@@ -64,6 +64,39 @@ def clientes():
     conn.close()
     return render_template('admin/clientes.html', datos_clientes=datos_clientes)
 
+@admin_bp.route('/editar-cliente/<int:id_usuario>', methods=['GET', 'POST'])
+@admin_required
+def editar_cliente(id_usuario):
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        correo = request.form.get('correo')
+        telefono = request.form.get('telefono')
+        cur.execute("""
+            UPDATE usuarios
+            SET nombre_completo=%s, correo=%s, telefono=%s
+            WHERE id_usuario=%s
+        """, (nombre, correo, telefono, id_usuario))
+        conn.commit()
+        cur.close()
+        conn.close()
+        flash('Cliente actualizado correctamente', 'success')
+        return redirect(url_for('admin.clientes'))
+
+    cur.execute("""
+        SELECT u.*, c.*
+        FROM usuarios u
+        LEFT JOIN clientes c ON u.id_usuario = c.id_usuario
+        WHERE u.id_usuario = %s
+    """, (id_usuario,))
+    cliente = cur.fetchone()
+    cur.close()
+    conn.close()
+    return render_template('admin/editar_cliente.html', cliente=cliente)
+
+
 # Eliminar cliente
 @admin_bp.route('/eliminar-cliente', methods=["POST"])
 @admin_required
